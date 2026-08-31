@@ -3,6 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DashboardLayout } from './components/DashboardLayout';
 import { CotizadorForm } from './components/CotizadorForm';
 import { GanttProduccion } from './components/GanttProduccion';
+import { FitosanitarioView } from './components/FitosanitarioView';
+import { ClientesView } from './components/ClientesView';
+import { FichasNormativasView } from './components/FichasNormativasView';
 import { LoginForm } from './components/LoginForm';
 import { calcularCotizacion } from './api/cotizaciones';
 import type { CotizacionPayload, TokenResponse } from './types';
@@ -10,42 +13,68 @@ import type { CotizacionPayload, TokenResponse } from './types';
 const queryClient = new QueryClient();
 
 export const AppContent: React.FC = () => {
-  const [user, setUser] = useState<TokenResponse | null>(null);
-  const [activeView, setActiveView] = useState('dashboard');
+  const [user, setUser] = useState<TokenResponse | null>(() => {
+    const token = localStorage.getItem('access_token');
+    return token ? {
+      access_token: token,
+      token_type: 'bearer',
+      user_info: {
+        email: 'admin@renoval.com',
+        nombre: 'Ing. Rafael',
+        rol: 'ADMIN',
+        area: 'Planta Lerma'
+      }
+    } : null;
+  });
+
+  const [activeView, setActiveView] = useState<string>('dashboard');
 
   if (!user) {
     return <LoginForm onLoginSuccess={(userData) => setUser(userData)} />;
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    setUser(null);
+  };
+
   const handleSaveCotizacion = async (payload: CotizacionPayload) => {
     try {
       const res = await calcularCotizacion(payload);
-      alert(`Cotización calculada exitosamente. Folio: ${res.folio} - Utilidad: $${res.utilidad_unitaria}`);
+      alert(`Cotización guardada en MySQL. Folio: ${res.folio} - Utilidad: $${res.utilidad_unitaria} MXN`);
+      setActiveView('dashboard');
     } catch {
-      alert('Error al procesar la cotización.');
+      alert('Error al procesar y guardar la cotización.');
     }
   };
 
   return (
-    <div className="relative">
-      {activeView === 'dashboard' && <DashboardLayout onNavigate={(view) => setActiveView(view)} />}
-      
-      <div className="p-6 bg-[#0a0d14] min-h-screen text-white">
-        {activeView === 'cotizador' && (
-          <div className="max-w-6xl mx-auto space-y-4">
-            <button onClick={() => setActiveView('dashboard')} className="text-xs bg-gray-800 px-3 py-1.5 rounded-lg">← Volver al Dashboard</button>
-            <CotizadorForm onSubmit={handleSaveCotizacion} />
-          </div>
-        )}
+    <DashboardLayout 
+      activeView={activeView} 
+      onNavigate={(view) => setActiveView(view)} 
+      onLogout={handleLogout}
+      userName={user.user_info.nombre}
+    >
+      {activeView === 'cotizador' && (
+        <CotizadorForm onSubmit={handleSaveCotizacion} />
+      )}
 
-        {activeView === 'lotes' && (
-          <div className="max-w-6xl mx-auto space-y-4">
-            <button onClick={() => setActiveView('dashboard')} className="text-xs bg-gray-800 px-3 py-1.5 rounded-lg mb-4">← Volver al Dashboard</button>
-            <GanttProduccion />
-          </div>
-        )}
-      </div>
-    </div>
+      {activeView === 'lotes' && (
+        <GanttProduccion />
+      )}
+
+      {activeView === 'fitosanitario' && (
+        <FitosanitarioView />
+      )}
+
+      {activeView === 'clientes' && (
+        <ClientesView />
+      )}
+
+      {activeView === 'fichas' && (
+        <FichasNormativasView />
+      )}
+    </DashboardLayout>
   );
 };
 

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { loginUser, registerUser } from '../api/auth';
 import type { TokenResponse, UserRegisterPayload } from '../types';
-import { Lock, Mail, User, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, User, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void }> = ({ onLoginSuccess }) => {
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   // Estados del Formulario
   const [email, setEmail] = useState<string>('admin@renoval.com');
@@ -64,7 +65,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
             <div>
               <label className="text-xs text-gray-400">Nombre de Usuario (Username):</label>
               <div className="flex items-center gap-2 bg-[#181d29] border border-[#252c3d] p-2 rounded-xl mt-1">
-                <User className="w-4 h-4 text-gray-400" />
+                <User className="w-4 h-4 text-gray-400 shrink-0" />
                 <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="bg-transparent border-none outline-none text-sm w-full text-white" required />
               </div>
             </div>
@@ -72,7 +73,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
             <div>
               <label className="text-xs text-gray-400">Nombre Completo:</label>
               <div className="flex items-center gap-2 bg-[#181d29] border border-[#252c3d] p-2 rounded-xl mt-1">
-                <User className="w-4 h-4 text-gray-400" />
+                <User className="w-4 h-4 text-gray-400 shrink-0" />
                 <input type="text" value={nombreCompleto} onChange={(e) => setNombreCompleto(e.target.value)} className="bg-transparent border-none outline-none text-sm w-full text-white" required />
               </div>
             </div>
@@ -80,7 +81,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
             <div>
               <label className="text-xs text-gray-400">Área / Rol en RENOVAL:</label>
               <div className="flex items-center gap-2 bg-[#181d29] border border-[#252c3d] p-2 rounded-xl mt-1">
-                <ShieldCheck className="w-4 h-4 text-gray-400" />
+                <ShieldCheck className="w-4 h-4 text-gray-400 shrink-0" />
                 <select 
                   value={rol} 
                   onChange={(e) => setRol(e.target.value as UserRegisterPayload['rol'])} 
@@ -100,7 +101,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
         <div>
           <label className="text-xs text-gray-400">Correo Electrónico:</label>
           <div className="flex items-center gap-2 bg-[#181d29] border border-[#252c3d] p-2 rounded-xl mt-1">
-            <Mail className="w-4 h-4 text-gray-400" />
+            <Mail className="w-4 h-4 text-gray-400 shrink-0" />
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-transparent border-none outline-none text-sm w-full text-white" required />
           </div>
         </div>
@@ -108,8 +109,21 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
         <div>
           <label className="text-xs text-gray-400">Contraseña:</label>
           <div className="flex items-center gap-2 bg-[#181d29] border border-[#252c3d] p-2 rounded-xl mt-1">
-            <Lock className="w-4 h-4 text-gray-400" />
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-transparent border-none outline-none text-sm w-full text-white" required />
+            <Lock className="w-4 h-4 text-gray-400 shrink-0" />
+            <input 
+              type={showPassword ? 'text' : 'password'} 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="bg-transparent border-none outline-none text-sm w-full text-white" 
+              required 
+            />
+            <button 
+              type="button" 
+              onClick={() => setShowPassword(!showPassword)} 
+              className="text-gray-400 hover:text-white p-1 focus:outline-none shrink-0"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 

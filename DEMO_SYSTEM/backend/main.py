@@ -6,37 +6,22 @@ from datetime import date
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 
-# Importación de la conexión y modelos ORM
+# Importaciones del ORM y Conexión
 from app.core.database import engine, Base, get_db
 from app.models.entities import UsuarioDB, CotizacionDB, ClienteDB, LoteProduccionDB
 
-# Configuración del contexto de cifrado de contraseñas con bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Crear las tablas automáticamente en la base de datos MySQL al arrancar
+# Crear tablas en MySQL automáticamente
 Base.metadata.create_all(bind=engine)
 
-# ------------------------------------------------------------------------------
-# Configuración Principal de FastAPI con Swagger UI
-# ------------------------------------------------------------------------------
 app = FastAPI(
     title="RENOVAL SYS - Embalaje Industrial API",
-    description="""
-    ### Sistema Integral de Gestión de Tarimas y Embalaje Industrial de Madera.
-    
-    **Funcionalidades de la API:**
-    * **Autenticación Multi-Rol:** Inicio de sesión y registro para Administradores, Clientes, Operadores de Planta, Almacenistas y Proveedores.
-    * **Cotizador Paramétrico:** Cálculo dinámico de Pie Tabla, volumen de madera, costos indirectos y servicios (Estufado HT NOM-144, Saque, Cepillado).
-    * **Módulo de Clientes & Finanzas:** Estados de cuenta, historial de pedidos, líneas de crédito, control de anticipos y saldos pendientes.
-    * **Producción al Día & Gantt:** Seguimiento de lotes de tarimas en tiempo real (Aserradero, Armado, Tratamiento Fitosanitario HT, Embarque) estructurado para Diagrama de Gantt.
-    * **Control de Áreas:** Separación de permisos para Almacén de materia prima (troza, clavos), Proveedores, Línea de Armado y Administración.
-    """,
     version="2.0.0",
-    docs_url="/swagger",  # Documentación interactiva Swagger
+    docs_url="/swagger",
     redoc_url="/redoc"
 )
 
-# Permitir peticiones desde el Frontend en Vite (React)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,14 +31,69 @@ app.add_middleware(
 )
 
 # ------------------------------------------------------------------------------
-# Models / Schemas Pydantic (Validación y Documentación en Swagger)
+# Poblado Automático de Datos de Prueba en MySQL
+# ------------------------------------------------------------------------------
+@app.on_event("startup")
+def seeder_base_datos():
+    db = next(get_db())
+    try:
+        # 1. Sembrar Usuario Admin Inicial
+        if db.query(UsuarioDB).count() == 0:
+            user_admin = UsuarioDB(
+                username="rafael",
+                email="admin@renoval.com",
+                password_hash=pwd_context.hash("admin123"),
+                nombre_completo="Ing. Rafael",
+                rol="ADMIN"
+            )
+            db.add(user_admin)
+
+        # 2. Sembrar Clientes Iniciales
+        if db.query(ClienteDB).count() == 0:
+            clientes = [
+                ClienteDB(razon_social="Logística & Embalajes del Valle S.A.", rfc="LEV180420ABC", limite_credito=500000.0, credito_utilizado=180000.0, anticipos_registrados=50000.0),
+                ClienteDB(razon_social="Automotive Freight Mexico", rfc="AFM990115XYZ", limite_credito=750000.0, credito_utilizado=320000.0, anticipos_registrados=100000.0),
+                ClienteDB(razon_social="Empaques Industriales Lerma", rfc="EIL050812PQR", limite_credito=300000.0, credito_utilizado=45000.0, anticipos_registrados=0.0),
+            ]
+            db.add_all(clientes)
+
+        # 3. Sembrar Lotes de Producción (Gantt y NOM-144)
+        if db.query(LoteProduccionDB).count() == 0:
+            lotes = [
+                LoteProduccionDB(folio_lote="LOT-2026-001", producto="Tarima Barrote 40\" x 48\" (NOM-144)", piezas_totales=1200, piezas_completadas=850, etapa_actual="HT_FITOSANITARIO", fecha_inicio=date(2026, 8, 25), fecha_fin_estimada=date(2026, 8, 30), area_asignada="Horno de Estufado HT-01"),
+                LoteProduccionDB(folio_lote="LOT-2026-002", producto="Tarima Tacón Perimetral 1200x1000mm", piezas_totales=800, piezas_completadas=320, etapa_actual="ARMADO", fecha_inicio=date(2026, 8, 27), fecha_fin_estimada=date(2026, 9, 2), area_asignada="Línea de Clavado Mecanizado B"),
+                LoteProduccionDB(folio_lote="LOT-2026-003", producto="Caja Industrial Madera Reforzada", piezas_totales=450, piezas_completadas=450, etapa_actual="EMBARQUE", fecha_inicio=date(2026, 8, 20), fecha_fin_estimada=date(2026, 8, 28), area_asignada="Almacén de Producto Terminado"),
+            ]
+            db.add_all(lotes)
+
+        # 4. Sembrar Cotización de Prueba
+        if db.query(CotizacionDB).count() == 0:
+            cotizacion = CotizacionDB(
+                folio="COT-2026-101",
+                atencion="Ing. Jorge",
+                nombre_producto="Tarima de barrote con saque 40\" x 48\"",
+                cantidad_piezas=800,
+                precio_sugerido_unidad=380.0,
+                pie_tablar_total=13.5,
+                costo_total_unitario=285.0,
+                utilidad_unitaria=95.0,
+                cliente_id=1
+            )
+            db.add(cotizacion)
+
+        db.commit()
+    finally:
+        db.close()
+
+# ------------------------------------------------------------------------------
+# Schemas Pydantic
 # ------------------------------------------------------------------------------
 class UserRegister(BaseModel):
     username: str
     email: EmailStr
     password: str
     nombre_completo: str
-    rol: str  # ADMIN, CLIENTE, OPERADOR_PLANTA, ALMACENISTA, PROVEEDOR
+    rol: str
 
 class UserLogin(BaseModel):
     email: str
@@ -65,7 +105,7 @@ class TokenResponse(BaseModel):
     user_info: dict
 
 class ElementoMadera(BaseModel):
-    nombre_elemento: str  # Ej: Tabla Superior, Barrote Central
+    nombre_elemento: str
     ancho_in: float
     grueso_in: float
     largo_in: float
@@ -75,7 +115,7 @@ class ElementoMadera(BaseModel):
 class CotizacionCreate(BaseModel):
     cliente_id: int
     atencion: str
-    nombre_producto: str  # Ej: Tarima Barrote 40" x 48"
+    nombre_producto: str
     cantidad_piezas: int
     precio_sugerido_unidad: float
     costo_estufa_ht: float
@@ -90,202 +130,94 @@ class LoteProduccionGantt(BaseModel):
     producto: str
     piezas_totales: int
     piezas_completadas: int
-    etapa_actual: str  # ASERRADERO, ARMADO, HT_FITOSANITARIO, EMBARQUE
+    etapa_actual: str
     fecha_inicio: date
     fecha_fin_estimada: date
     porcentaje_avance: float
-    area_asignada: str  # Ej: Área de Armado B, Horno HT-01, Almacén
-
-class EstadoCuentaCliente(BaseModel):
-    cliente_id: int
-    razon_social: str
-    limite_credito: float
-    credito_utilizado: float
-    credito_disponible: float
-    anticipos_registrados: float
-    saldo_pendiente: float
-    historial_pedidos: List[dict]
+    area_asignada: str
 
 # ------------------------------------------------------------------------------
-# 1. Autenticación & Registro Multi-Rol (Conectado a MySQL con Hashing)
+# Endpoints de la API
 # ------------------------------------------------------------------------------
-@app.post("/api/v1/auth/registro", tags=["1. Autenticación & Usuarios"], response_model=dict)
-@app.post("/api/v1/auth/registro/", tags=["1. Autenticación & Usuarios"], response_model=dict)
+@app.post("/api/v1/auth/registro", tags=["Autenticación"])
+@app.post("/api/v1/auth/registro/", tags=["Autenticación"])
 def registrar_usuario(usuario: UserRegister, db: Session = Depends(get_db)):
-    """Registra nuevos usuarios cifrando la contraseña con bcrypt en MySQL."""
-    usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.email == usuario.email).first()
-    if usuario_existente:
+    if db.query(UsuarioDB).filter(UsuarioDB.email == usuario.email).first():
         raise HTTPException(status_code=400, detail="El correo ya se encuentra registrado.")
     
-    # Generación de Hash seguro
-    password_cifrada = pwd_context.hash(usuario.password)
-
-    nuevo_usuario = UsuarioDB(
+    nuevo_user = UsuarioDB(
         username=usuario.username,
         email=usuario.email,
-        password_hash=password_cifrada,
+        password_hash=pwd_context.hash(usuario.password),
         nombre_completo=usuario.nombre_completo,
         rol=usuario.rol
     )
-    db.add(nuevo_usuario)
+    db.add(nuevo_user)
     db.commit()
-    db.refresh(nuevo_usuario)
-    
-    return {
-        "status": "exito",
-        "mensaje": f"Usuario {nuevo_usuario.username} registrado correctamente en la base de datos."
-    }
+    return {"status": "exito", "mensaje": "Usuario creado correctamente"}
 
-@app.post("/api/v1/auth/login", tags=["1. Autenticación & Usuarios"], response_model=TokenResponse)
-@app.post("/api/v1/auth/login/", tags=["1. Autenticación & Usuarios"], response_model=TokenResponse)
+@app.post("/api/v1/auth/login", response_model=TokenResponse, tags=["Autenticación"])
+@app.post("/api/v1/auth/login/", response_model=TokenResponse, tags=["Autenticación"])
 def iniciar_sesion(credenciales: UserLogin, db: Session = Depends(get_db)):
-    """Inicio de sesión unificado con verificación de hash bcrypt sobre MySQL."""
     usuario = db.query(UsuarioDB).filter(UsuarioDB.email == credenciales.email).first()
-    
     if not usuario:
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
 
-    # Verificación flexible (permite comparar hashes o texto plano previo)
-    es_valido = False
-    if usuario.password_hash == credenciales.password:
-        es_valido = True
-    else:
-        try:
-            es_valido = pwd_context.verify(credenciales.password, usuario.password_hash)
-        except Exception:
-            es_valido = False
-
+    es_valido = usuario.password_hash == credenciales.password or pwd_context.verify(credenciales.password, usuario.password_hash)
     if not es_valido:
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
 
     return {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token_renoval_2026",
+        "access_token": "token_renoval_2026",
         "token_type": "bearer",
         "user_info": {
             "email": usuario.email,
             "nombre": usuario.nombre_completo,
             "rol": usuario.rol,
-            "area": "Planta Lerma" if usuario.rol in ["ADMIN", "OPERADOR_PLANTA"] else "Portal Clientes"
+            "area": "Planta Lerma"
         }
     }
 
-# ------------------------------------------------------------------------------
-# 2. Cotizador Paramétrico de Madera (Guardado Persistente en MySQL)
-# ------------------------------------------------------------------------------
-@app.post("/api/v1/cotizador/calcular", tags=["2. Cotizador Paramétrico"], response_model=dict)
-@app.post("/api/v1/cotizador/calcular/", tags=["2. Cotizador Paramétrico"], response_model=dict)
-def calcular_cotizacion_paramétrica(payload: CotizacionCreate, db: Session = Depends(get_db)):
-    """Calcula la cotización de madera y la registra de forma permanente en la tabla de cotizaciones."""
-    total_pie_tablar = sum([((el.ancho_in * el.grueso_in * el.largo_in) / 144) * el.piezas_por_tarima for el in payload.elementos])
-    costo_madera = sum([(((el.ancho_in * el.grueso_in * el.largo_in) / 144) * el.precio_pie_tabla * el.piezas_por_tarima) for el in payload.elementos])
-    costo_servicios = payload.costo_estufa_ht + payload.costo_saque + payload.costo_cepillado + payload.costo_transporte
-    costo_unitario_total = costo_madera + costo_servicios
-    utilidad_unitaria = payload.precio_sugerido_unidad - costo_unitario_total
-    
-    total_registros = db.query(CotizacionDB).count()
-    folio = f"COT-2026-{total_registros + 101}"
-    
-    nueva_cotizacion = CotizacionDB(
-        folio=folio,
-        atencion=payload.atencion,
-        nombre_producto=payload.nombre_producto,
-        cantidad_piezas=payload.cantidad_piezas,
-        precio_sugerido_unidad=payload.precio_sugerido_unidad,
-        pie_tablar_total=round(total_pie_tablar, 3),
-        costo_total_unitario=round(costo_unitario_total, 2),
-        utilidad_unitaria=round(utilidad_unitaria, 2),
-        cliente_id=payload.cliente_id
-    )
-    db.add(nueva_cotizacion)
-    db.commit()
-    
+@app.get("/api/v1/dashboard/metrics", tags=["Dashboard"])
+@app.get("/api/v1/dashboard/metrics/", tags=["Dashboard"])
+def obtener_metricas(db: Session = Depends(get_db)):
     return {
-        "folio": folio,
-        "pie_tablar_por_tarima": round(total_pie_tablar, 3),
-        "costo_madera_unidad": round(costo_madera, 2),
-        "costo_total_unitario": round(costo_unitario_total, 2),
-        "precio_venta_unitario": payload.precio_sugerido_unidad,
-        "utilidad_unitaria": round(utilidad_unitaria, 2),
-        "porcentaje_utilidad": round((utilidad_unitaria / payload.precio_sugerido_unidad) * 100, 1)
+        "tarimas_producidas": 12450,
+        "lotes_completados": db.query(LoteProduccionDB).count(),
+        "utilidad_promedio_pct": 28.4,
+        "utilidad_promedio_monto": 48.50,
+        "top_modelos": [
+            {"nombre": "Tarima Barrote 40\" x 48\"", "unidades": 4800},
+            {"nombre": "Tarima Tacón Perimetral", "unidades": 3200},
+            {"nombre": "Caja de Madera Industrial", "unidades": 1450}
+        ],
+        "ht_en_proceso_lotes": 3,
+        "ht_en_proceso_piezas": 2400,
+        "certificados_liberados": 15
     }
 
-# ------------------------------------------------------------------------------
-# 3. Producción al Día & Diagrama de Gantt (Consulta BD)
-# ------------------------------------------------------------------------------
-@app.get("/api/v1/produccion/gantt", tags=["3. Producción Diaria (Gantt)"], response_model=List[LoteProduccionGantt])
-@app.get("/api/v1/produccion/gantt/", tags=["3. Producción Diaria (Gantt)"], response_model=List[LoteProduccionGantt])
-def obtener_produccion_diaria_gantt(db: Session = Depends(get_db)):
-    """Obtiene el listado de lotes desde la base de datos o retorna lotes base formateados para el Diagrama de Gantt."""
+@app.get("/api/v1/produccion/gantt", response_model=List[LoteProduccionGantt], tags=["Producción"])
+@app.get("/api/v1/produccion/gantt/", response_model=List[LoteProduccionGantt], tags=["Producción"])
+def obtener_gantt(db: Session = Depends(get_db)):
     lotes = db.query(LoteProduccionDB).all()
-    if not lotes:
-        return [
-            {
-                "id": 101,
-                "folio_lote": "LOT-2026-001",
-                "producto": "Tarima Barrote 40\" x 48\" (NOM-144)",
-                "piezas_totales": 1200,
-                "piezas_completadas": 850,
-                "etapa_actual": "HT_FITOSANITARIO",
-                "fecha_inicio": date(2026, 8, 25),
-                "fecha_fin_estimada": date(2026, 8, 30),
-                "porcentaje_avance": 70.8,
-                "area_asignada": "Horno de Estufado HT-01"
-            },
-            {
-                "id": 102,
-                "folio_lote": "LOT-2026-002",
-                "producto": "Tarima Tacón Perimetral 1200x1000mm",
-                "piezas_totales": 800,
-                "piezas_completadas": 320,
-                "etapa_actual": "ARMADO",
-                "fecha_inicio": date(2026, 8, 27),
-                "fecha_fin_estimada": date(2026, 9, 2),
-                "porcentaje_avance": 40.0,
-                "area_asignada": "Línea de Clavado Mecanizado B"
-            }
-        ]
-    return lotes
+    resultado = []
+    for l in lotes:
+        pct = round((l.piezas_completadas / l.piezas_totales) * 100, 1) if l.piezas_totales > 0 else 0
+        resultado.append({
+            "id": l.id,
+            "folio_lote": l.folio_lote,
+            "producto": l.producto,
+            "piezas_totales": l.piezas_totales,
+            "piezas_completadas": l.piezas_completadas,
+            "etapa_actual": l.etapa_actual,
+            "fecha_inicio": l.fecha_inicio,
+            "fecha_fin_estimada": l.fecha_fin_estimada,
+            "porcentaje_avance": pct,
+            "area_asignada": l.area_asignada
+        })
+    return resultado
 
-# ------------------------------------------------------------------------------
-# 4. Clientes, Estados de Cuenta & Anticipos
-# ------------------------------------------------------------------------------
-@app.get("/api/v1/clientes/{cliente_id}/estado-cuenta", tags=["4. Clientes & Finanzas"], response_model=EstadoCuentaCliente)
-@app.get("/api/v1/clientes/{cliente_id}/estado-cuenta/", tags=["4. Clientes & Finanzas"], response_model=EstadoCuentaCliente)
-def obtener_estado_cuenta(cliente_id: int, db: Session = Depends(get_db)):
-    """Consulta el estado de cuenta y créditos del cliente en MySQL."""
-    cliente = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
-    
-    razon_social = cliente.razon_social if cliente else "Logística & Embalajes del Valle S.A. de C.V."
-    limite = cliente.limite_credito if cliente else 500000.00
-    utilizado = cliente.credito_utilizado if cliente else 180000.00
-    anticipos = cliente.anticipos_registrados if cliente else 50000.00
-    
-    return {
-        "cliente_id": cliente_id,
-        "razon_social": razon_social,
-        "limite_credito": limite,
-        "credito_utilizado": utilizado,
-        "credito_disponible": limite - utilizado,
-        "anticipos_registrados": anticipos,
-        "saldo_pendiente": utilizado - anticipos,
-        "historial_pedidos": [
-            {"pedido_id": "PED-881", "fecha": "2026-08-10", "total": 120000.0, "estatus": "ENTREGADO_Y_PAGADO"},
-            {"pedido_id": "PED-894", "fecha": "2026-08-22", "total": 110000.0, "estatus": "EN_PRODUCCION"}
-        ]
-    }
-
-# ------------------------------------------------------------------------------
-# 5. Distinción de Áreas: Almacén & Proveedores
-# ------------------------------------------------------------------------------
-@app.get("/api/v1/almacen/inventario-materia-prima", tags=["5. Áreas: Almacén & Proveedores"])
-@app.get("/api/v1/almacen/inventario-materia-prima/", tags=["5. Áreas: Almacén & Proveedores"])
-def obtener_inventario_almacen():
-    """Módulo exclusivo para el área de Almacén de materia prima e insumos de embalaje."""
-    return {
-        "area": "Almacén General de Materia Prima",
-        "insumos": [
-            {"item": "Madera en Troza (Pino)", "existencia": "450 m3", "proveedor": "Aserraderos del Norte"},
-            {"item": "Clavo Espiral 2 1/2\"", "existencia": "1,200 kg", "proveedor": "Ferretera Industrial"},
-            {"item": "Sello Térmico NOM-144", "existencia": "Conforme a norma", "proveedor": "SEMARNAT / Certificado"}
-        ]
-    }
+@app.get("/api/v1/clientes", tags=["Clientes"])
+@app.get("/api/v1/clientes/", tags=["Clientes"])
+def obtener_clientes(db: Session = Depends(get_db)):
+    return db.query(ClienteDB).all()
