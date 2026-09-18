@@ -4,8 +4,13 @@ import { DashboardLayout } from './components/DashboardLayout';
 import { CotizadorForm } from './components/CotizadorForm';
 import { GanttProduccion } from './components/GanttProduccion';
 import { FitosanitarioView } from './components/FitosanitarioView';
+import { CertificadosView } from './components/CertificadosView';
 import { ClientesView } from './components/ClientesView';
 import { FichasNormativasView } from './components/FichasNormativasView';
+import { InventarioMaderaView } from './components/InventarioMaderaView';
+import { InsumosClavadoView } from './components/InsumosClavadoView';
+import { LogisticaDespachoView } from './components/LogisticaDespachoView';
+import { GestionUsuariosView } from './components/GestionUsuariosView';
 import { LoginForm } from './components/LoginForm';
 import { calcularCotizacion } from './api/cotizaciones';
 import type { CotizacionPayload, TokenResponse } from './types';
@@ -22,7 +27,7 @@ export const AppContent: React.FC = () => {
         email: 'admin@renoval.com',
         nombre: 'Ing. Rafael',
         rol: 'ADMIN',
-        area: 'Planta Lerma'
+        area: 'Planta'
       }
     } : null;
   });
@@ -59,6 +64,14 @@ export const AppContent: React.FC = () => {
         <CotizadorForm onSubmit={handleSaveCotizacion} />
       )}
 
+      {activeView === 'inventario_madera' && (
+        <InventarioMaderaView />
+      )}
+
+      {activeView === 'insumos_clavado' && (
+        <InsumosClavadoView />
+      )}
+
       {activeView === 'lotes' && (
         <GanttProduccion />
       )}
@@ -67,8 +80,20 @@ export const AppContent: React.FC = () => {
         <FitosanitarioView />
       )}
 
+      {activeView === 'certificados' && (
+        <CertificadosView />
+      )}
+
+      {activeView === 'logistica' && (
+        <LogisticaDespachoView />
+      )}
+
       {activeView === 'clientes' && (
         <ClientesView />
+      )}
+
+      {activeView === 'usuarios' && (
+        <GestionUsuariosView />
       )}
 
       {activeView === 'fichas' && (

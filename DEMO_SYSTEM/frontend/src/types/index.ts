@@ -95,3 +95,46 @@ export interface DashboardMetrics {
   ht_en_proceso_piezas: number;
   certificados_liberados: number;
 }
+
+export interface InsumoClavado {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  tipo: 'CLAVO_ESPIRAL' | 'GRAPA' | 'ESQUINERO' | 'PINTURA';
+  medida: string;
+  existencia_kg: number;
+  stock_minimo_kg: number;
+  linea_asignada: string;
+}
+
+export interface ControlMerma {
+  id: number;
+  folio_lote: string;
+  pt_teoricos: number;
+  pt_reales_utilizados: number;
+  pt_desperdicio: number;
+  porcentaje_scrap: number;
+  causa_principal: string;
+}
+
+export interface EmbarqueDespacho {
+  id: number;
+  folio_embarque: string;
+  cliente: string;
+  chofer: string;
+  placas_trailer: string;
+  tarimas_cargadas: number;
+  fecha_despacho: string;
+  estatus: 'PROGRAMADO' | 'EN_TRANSITO' | 'ENTREGADO';
+}
+
+export interface CertificadoFitosanitario {
+  id: number;
+  folio_certificado: string;
+  folio_lote: string;
+  cliente: string;
+  codigo_sello_ht: string;
+  temperatura_alcanzada: number;
+  tiempo_sostenimiento_min: number;
+  fecha_emision: string;
+}
