@@ -1,0 +1,24 @@
+# Framework Web y Servidor
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Base de Datos y ORM
+sqlalchemy>=2.0.25
+pymysql>=1.1.0
+cryptography>=42.0.0
+
+# Validación de Datos y Configuración
+pydantic>=2.6.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# Generación de Certificados NOM-144 (PDF)
+reportlab>=4.0.9
+
+# Procesamiento de Archivos y Excel (Costos 2026)
+openpyxl>=3.1.2
+pandas>=2.2.0
+
+# Utilidades HTTP y CORS
+httpx>=0.26.0
+python-multipart>=0.0.6
