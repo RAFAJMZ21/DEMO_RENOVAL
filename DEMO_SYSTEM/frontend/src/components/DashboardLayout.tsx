@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getDashboardMetrics } from '../api/dashboard';
+import { listarViajesPendientes } from '../api/logistica';
+import { useAuth } from '../context/AuthContext.tsx';
 import { 
   Building2, 
   Sun, 
@@ -23,7 +25,10 @@ import {
   Layers,
   Truck,
   UserCheck,
-  ShieldCheck
+  ShieldCheck,
+  FileText,
+  ClipboardCheck,
+  MapPin
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -46,12 +51,24 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Rol de la sesión: filtra el menú y restrige vistas para OPERADOR.
+  const { rol, esOperador } = useAuth();
+
   // Configuración de revalidación silenciosa en segundo plano
   const { data: metrics, isLoading, isFetching } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: getDashboardMetrics,
     refetchInterval: 30000, // Actualiza cada 30s sin desmontar componentes
     staleTime: 15000,       // Conserva la caché por 15s
+  });
+
+  // Insignia de viajes pendientes para el Administrador (notificación en tiempo real)
+  const { data: pendientesCount } = useQuery({
+    queryKey: ['viajes-pendientes-count'],
+    queryFn: async () => (await listarViajesPendientes()).length,
+    refetchInterval: 15000,
+    enabled: !esOperador,
+    initialData: 0,
   });
 
   useEffect(() => {
@@ -120,7 +137,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         }`}
       >
         <div className="space-y-5">
-          <div className="flex justify-between items-center px-2 cursor-pointer" onClick={() => handleNavClick('dashboard')}>
+          <div className="flex justify-between items-center px-2 cursor-pointer" onClick={() => handleNavClick(esOperador ? 'logistica_operador_dashboard' : 'dashboard')}>
             <h1 className="text-2xl font-black tracking-wider text-emerald-400">
               RENOVAL<span className="text-lime-400">SYS</span>
             </h1>
@@ -140,6 +157,28 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
 
           <nav className="space-y-3 overflow-y-auto max-h-[calc(100vh-220px)] pr-1">
+            {esOperador ? (
+              /* OPERADOR: ÚNICAMENTE la sección de transporte */
+              <div>
+                <div className="px-2 text-[10px] font-bold text-amber-500 tracking-wider mb-1">LOGÍSTICA & DESPACHO</div>
+                <button onClick={() => handleNavClick('logistica_operador_dashboard')} className={getNavButtonClass('logistica_operador_dashboard')}>
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="flex-1 text-left">Panel Principal</span>
+                </button>
+                <button onClick={() => handleNavClick('logistica_operador')} className={`${getNavButtonClass('logistica_operador')} mt-1`}>
+                  <Truck className="w-4 h-4" />
+                  <span className="flex-1 text-left">Alta de Viajes</span>
+                </button>
+                <button onClick={() => handleNavClick('logistica_embarques')} className={`${getNavButtonClass('logistica_embarques')} mt-1`}>
+                  <MapPin className="w-4 h-4" />
+                  <span className="flex-1 text-left">Mis Viajes / Embarques</span>
+                </button>
+                <div className="px-2 mt-3 text-[10px] text-gray-500">
+                  Registro y consulta de envíos. Acceso restringido a tu rol Operador.
+                </div>
+              </div>
+            ) : (
+              <>
             <div>
               <div className="px-2 text-[10px] font-bold text-emerald-400 tracking-wider mb-1">OPERACIONES</div>
               <button onClick={() => handleNavClick('dashboard')} className={getNavButtonClass('dashboard')}>
@@ -149,6 +188,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <button onClick={() => handleNavClick('cotizador')} className={`${getNavButtonClass('cotizador')} mt-1`}>
                 <Calculator className="w-4 h-4" />
                 <span>Cotizador Paramétrico</span>
+              </button>
+              <button onClick={() => handleNavClick('cotizaciones')} className={`${getNavButtonClass('cotizaciones')} mt-1`}>
+                <FileText className="w-4 h-4" />
+                <span>Cotizaciones</span>
               </button>
             </div>
 
@@ -186,6 +229,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <Truck className="w-4 h-4" />
                 <span>Embarques & Salidas</span>
               </button>
+              <button onClick={() => handleNavClick('logistica_operador')} className={`${getNavButtonClass('logistica_operador')} mt-1`}>
+                <MapPin className="w-4 h-4" />
+                <span>Alta de Viajes (Operador)</span>
+              </button>
+              <button onClick={() => handleNavClick('logistica_admin')} className={`${getNavButtonClass('logistica_admin')} mt-1`}>
+                <ClipboardCheck className="w-4 h-4" />
+                <span className="flex-1 text-left">Aprobaciones de Viajes</span>
+                {pendientesCount > 0 && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[9px] font-black leading-none">
+                    {pendientesCount}
+                  </span>
+                )}
+              </button>
             </div>
 
             <div>
@@ -203,6 +259,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <span>Fichas Normativas</span>
               </button>
             </div>
+              </>
+            )}
           </nav>
         </div>
 
@@ -235,12 +293,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <h2 className="text-base font-bold truncate flex items-center gap-2">
               {activeView === 'dashboard' && 'Resumen Operativo'}
               {activeView === 'cotizador' && 'Cotizador Paramétrico de Madera'}
+              {activeView === 'cotizaciones' && 'Cotizaciones'}
               {activeView === 'inventario_madera' && 'Inventario & Cubaje de Madera'}
               {activeView === 'insumos_clavado' && 'Control de Insumos & Clavado'}
               {activeView === 'lotes' && 'Control de Producción & Gantt'}
               {activeView === 'fitosanitario' && 'Control Fitosanitario (NOM-144)'}
               {activeView === 'certificados' && 'Certificados Fitosanitarios PDF'}
               {activeView === 'logistica' && 'Embarques & Despacho'}
+              {rol === 'OPERADOR' && activeView === 'logistica_operador_dashboard' && 'Panel Principal de Operador'}
+              {rol === 'OPERADOR' && activeView === 'logistica_operador' && 'Alta de Viajes (Operador)'}
+              {rol === 'OPERADOR' && activeView === 'logistica_embarques' && 'Mis Viajes / Embarques'}
+              {activeView === 'logistica_operador' && !esOperador && 'Control de Transporte — Alta de Viajes (Operador)'}
+              {activeView === 'logistica_admin' && 'Control de Transporte — Aprobaciones & Matriz de Fletes'}
               {activeView === 'clientes' && 'Catálogo de Clientes & Créditos'}
               {activeView === 'usuarios' && 'Personal & Permisos'}
               {activeView === 'fichas' && 'Fichas Normativas & Planos'}

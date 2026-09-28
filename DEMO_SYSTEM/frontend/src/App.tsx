@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuth } from './context/AuthContext.tsx';
+import { AuthProvider } from './context/AuthProvider';
 import { DashboardLayout } from './components/DashboardLayout';
 import { CotizadorForm } from './components/CotizadorForm';
 import { GanttProduccion } from './components/GanttProduccion';
@@ -12,35 +14,47 @@ import { InsumosClavadoView } from './components/InsumosClavadoView';
 import { LogisticaDespachoView } from './components/LogisticaDespachoView';
 import { GestionUsuariosView } from './components/GestionUsuariosView';
 import { LoginForm } from './components/LoginForm';
+import { CotizacionesView } from './views/CotizacionesView';
+import { LogisticaOperadorView } from './views/LogisticaOperadorView';
+import { LogisticaAdminView } from './views/LogisticaAdminView';
+import { PanelOperadorView } from './views/PanelOperadorView';
 import { calcularCotizacion } from './api/cotizaciones';
-import type { CotizacionPayload, TokenResponse } from './types';
+import type { CotizacionPayload } from './types';
 
 const queryClient = new QueryClient();
 
-export const AppContent: React.FC = () => {
-  const [user, setUser] = useState<TokenResponse | null>(() => {
-    const token = localStorage.getItem('access_token');
-    return token ? {
-      access_token: token,
-      token_type: 'bearer',
-      user_info: {
-        email: 'admin@renoval.com',
-        nombre: 'Ing. Rafael',
-        rol: 'ADMIN',
-        area: 'Planta'
-      }
-    } : null;
-  });
+const VISTA_POR_ROL: Record<string, string> = {
+  ADMIN: 'dashboard',
+  OPERADOR: 'logistica_operador_dashboard',
+};
 
-  const [activeView, setActiveView] = useState<string>('dashboard');
+export const AppContent: React.FC = () => {
+  const { user, rol, esOperador, login, logout } = useAuth();
+
+  const [activeView, setActiveView] = useState<string>(() =>
+    VISTA_POR_ROL[rol] ?? 'dashboard'
+  );
+
+  // Al iniciar sesión (cambio de usuario), restablece el panel por rol durante el render.
+  const [sesionActivaEmail, setSesionActivaEmail] = useState<string | null>(null);
+  const emailSesion = user?.user_info?.email ?? null;
+  if (user && emailSesion !== sesionActivaEmail) {
+    setSesionActivaEmail(emailSesion);
+    setActiveView(VISTA_POR_ROL[rol] ?? 'dashboard');
+  }
 
   if (!user) {
-    return <LoginForm onLoginSuccess={(userData) => setUser(userData)} />;
+    return (
+      <LoginForm
+        onLogin={async (identificador, password) => {
+          await login(identificador, password);
+        }}
+      />
+    );
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    setUser(null);
+    logout();
   };
 
   const handleSaveCotizacion = async (payload: CotizacionPayload) => {
@@ -54,50 +68,82 @@ export const AppContent: React.FC = () => {
   };
 
   return (
-    <DashboardLayout 
-      activeView={activeView} 
-      onNavigate={(view) => setActiveView(view)} 
+    <DashboardLayout
+      activeView={activeView}
+      onNavigate={setActiveView}
       onLogout={handleLogout}
       userName={user.user_info.nombre}
     >
-      {activeView === 'cotizador' && (
-        <CotizadorForm onSubmit={handleSaveCotizacion} />
-      )}
+      {/* Rol OPERADOR: ÚNICAMENTE módulo de transporte */}
+      {esOperador ? (
+        activeView === 'logistica_operador_dashboard' ? (
+          <PanelOperadorView
+            onNuevoViaje={() => setActiveView('logistica_operador')}
+            onVerEmbarques={() => setActiveView('logistica_embarques')}
+          />
+        ) : activeView === 'logistica_embarques' ? (
+          <LogisticaDespachoView />
+        ) : (
+          <LogisticaOperadorView />
+        )
+      ) : (
+        <>
+          {activeView === 'cotizador' && (
+            <CotizadorForm onSubmit={handleSaveCotizacion} />
+          )}
 
-      {activeView === 'inventario_madera' && (
-        <InventarioMaderaView />
-      )}
+          {activeView === 'cotizaciones' && (
+            <CotizacionesView />
+          )}
 
-      {activeView === 'insumos_clavado' && (
-        <InsumosClavadoView />
-      )}
+          {activeView === 'inventario_madera' && (
+            <InventarioMaderaView />
+          )}
 
-      {activeView === 'lotes' && (
-        <GanttProduccion />
-      )}
+          {activeView === 'insumos_clavado' && (
+            <InsumosClavadoView />
+          )}
 
-      {activeView === 'fitosanitario' && (
-        <FitosanitarioView />
-      )}
+          {activeView === 'lotes' && (
+            <GanttProduccion />
+          )}
 
-      {activeView === 'certificados' && (
-        <CertificadosView />
-      )}
+          {activeView === 'fitosanitario' && (
+            <FitosanitarioView />
+          )}
 
-      {activeView === 'logistica' && (
-        <LogisticaDespachoView />
-      )}
+          {activeView === 'certificados' && (
+            <CertificadosView />
+          )}
 
-      {activeView === 'clientes' && (
-        <ClientesView />
-      )}
+          {activeView === 'logistica' && (
+            <LogisticaDespachoView />
+          )}
 
-      {activeView === 'usuarios' && (
-        <GestionUsuariosView />
-      )}
+          {activeView === 'logistica_operador' && (
+            <LogisticaOperadorView />
+          )}
 
-      {activeView === 'fichas' && (
-        <FichasNormativasView />
+          {activeView === 'logistica_embarques' && (
+            <LogisticaDespachoView />
+          )}
+
+          {activeView === 'logistica_admin' && (
+            <LogisticaAdminView />
+          )}
+
+          {activeView === 'clientes' && (
+            <ClientesView />
+          )}
+
+          {activeView === 'usuarios' && (
+            <GestionUsuariosView />
+          )}
+
+          {activeView === 'fichas' && (
+            <FichasNormativasView />
+          )}
+        </>
       )}
     </DashboardLayout>
   );
@@ -105,7 +151,9 @@ export const AppContent: React.FC = () => {
 
 export const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
-    <AppContent />
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   </QueryClientProvider>
 );
 

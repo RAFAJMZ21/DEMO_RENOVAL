@@ -15,7 +15,7 @@ class CertificadoSchema(BaseModel):
     tiempo_sostenimiento_min: int
     fecha_emision: date
 
-@router.get("/certificados", response_model=List[CertificadoSchema])
+@router.get("/certificados/", response_model=List[CertificadoSchema])
 def obtener_certificados_ht():
     return [
         {

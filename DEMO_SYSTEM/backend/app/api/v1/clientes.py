@@ -23,7 +23,7 @@ class ClienteSchema(BaseModel):
 def obtener_clientes(db: Session = Depends(get_db)):
     return db.query(ClienteDB).all()
 
-@router.get("/{cliente_id}/estado-cuenta")
+@router.get("/{cliente_id}/estado-cuenta/")
 def obtener_estado_cuenta(cliente_id: int, db: Session = Depends(get_db)):
     cliente = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
     if not cliente:

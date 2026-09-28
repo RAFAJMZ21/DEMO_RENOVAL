@@ -3,7 +3,7 @@ export interface UserRegisterPayload {
   email: string;
   password: string;
   nombre_completo: string;
-  rol: 'ADMIN' | 'CLIENTE' | 'OPERADOR_PLANTA' | 'ALMACENISTA' | 'PROVEEDOR';
+  rol: 'ADMIN' | 'OPERADOR' | 'CLIENTE' | 'OPERADOR_PLANTA' | 'ALMACENISTA' | 'PROVEEDOR';
 }
 
 export interface UserLoginPayload {
@@ -42,6 +42,49 @@ export interface CotizacionPayload {
   costo_cepillado: number;
   costo_transporte: number;
   elementos: ElementoMadera[];
+}
+
+export type EstadoCotizacion = 'Borrador' | 'Aprobada' | 'Rechazada';
+
+export interface ItemCotizacion {
+  descripcion: string;
+  cantidad: number;
+  precio_unitario: number;
+}
+
+export interface CotizacionCreate {
+  cliente: string;
+  items: ItemCotizacion[];
+  dimensiones: string;
+  tipo_madera: string;
+  precio_unitario: number;
+  cantidad: number;
+  costo_mano_obra: number;
+  flete: number;
+}
+
+export interface CotizacionResumen {
+  id: number;
+  folio: string;
+  cliente: string;
+  tipo_madera: string;
+  dimensiones: string;
+  cantidad: number;
+  subtotal: number;
+  iva: number;
+  total: number;
+  estado: EstadoCotizacion;
+  created_at: string;
+}
+
+export interface Cotizacion extends CotizacionCreate {
+  id: number;
+  folio: string;
+  subtotal: number;
+  iva: number;
+  total: number;
+  estado: EstadoCotizacion;
+  created_at: string;
 }
 
 export interface LoteProduccionGantt {
@@ -137,4 +180,53 @@ export interface CertificadoFitosanitario {
   temperatura_alcanzada: number;
   tiempo_sostenimiento_min: number;
   fecha_emision: string;
+}
+
+export interface FleteTarifa {
+  id: number;
+  estado: string;
+  municipio: string;
+  empresa: string;
+  kilometros: number;
+  precio_flete: number;
+  costo_km: number;
+  capacidad_tarimas: number;
+  precio_unitario: number;
+  precio_reducido: number;
+}
+
+export type EstadoViaje = 'Pendiente' | 'En Tránsito' | 'Completado' | 'Rechazado';
+
+export interface ViajeLogisticaCreate {
+  folio_cotizacion_id?: number | null;
+  tarifa_id: number;
+  operador_id?: number | null;
+  unidad: string;
+  cantidad_tarimas: number;
+  fecha_salida?: string;
+}
+
+export interface ViajeLogisticaDetalle {
+  id: number;
+  folio_cotizacion_id: number | null;
+  folio_cotizacion: string;
+  tarifa_id: number;
+  operador_id: number | null;
+  operador_nombre: string;
+  unidad: string;
+  cantidad_tarimas: number;
+  costo_total_flete: number;
+  estado: EstadoViaje;
+  fecha_salida: string;
+  destino: string;
+  estado_tarifa: string;
+  municipio: string;
+  empresa: string;
+  kilometros: number;
+  costo_km: number;
+  precio_flete: number;
+  capacidad_tarimas: number;
+  precio_unitario: number;
+  precio_reducido: number;
+  created_at?: string;
 }

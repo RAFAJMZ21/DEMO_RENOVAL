@@ -17,7 +17,24 @@ class LoteGanttSchema(BaseModel):
     porcentaje_avance: float
     area_asignada: str
 
-@router.get("/gantt", response_model=List[LoteGanttSchema])
+class ControlMermaSchema(BaseModel):
+    id: int
+    folio_lote: str
+    pt_teoricos: float
+    pt_reales_utilizados: float
+    pt_desperdicio: float
+    porcentaje_scrap: float
+    causa_principal: str
+
+@router.get("/mermas-scrap/", response_model=List[ControlMermaSchema])
+def obtener_mermas_scrap():
+    return [
+        {"id": 1, "folio_lote": "LOT-2026-001", "pt_teoricos": 12450.0, "pt_reales_utilizados": 12110.0, "pt_desperdicio": 340.0, "porcentaje_scrap": 2.73, "causa_principal": "Nudos y grietas en tablas"},
+        {"id": 2, "folio_lote": "LOT-2026-002", "pt_teoricos": 8300.0, "pt_reales_utilizados": 8120.0, "pt_desperdicio": 180.0, "porcentaje_scrap": 2.17, "causa_principal": "Despuntes en cepillado"},
+        {"id": 3, "folio_lote": "LOT-2026-003", "pt_teoricos": 6400.0, "pt_reales_utilizados": 6230.0, "pt_desperdicio": 170.0, "porcentaje_scrap": 2.66, "causa_principal": "Astillado en clavado"}
+    ]
+
+@router.get("/gantt/", response_model=List[LoteGanttSchema])
 def obtener_produccion_gantt():
     return [
         {

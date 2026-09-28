@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { loginUser, registerUser } from '../api/auth';
-import type { TokenResponse, UserRegisterPayload } from '../types';
+import { registerUser } from '../api/auth';
+import type { UserRegisterPayload } from '../types';
 import { Lock, Mail, User, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
-export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void }> = ({ onLoginSuccess }) => {
+interface LoginFormProps {
+  onLogin: (identificador: string, password: string) => Promise<void>;
+}
+
+export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   // Estados del Formulario
-  const [email, setEmail] = useState<string>('admin@renoval.com');
-  const [password, setPassword] = useState<string>('123456');
+  const [email, setEmail] = useState<string>('admin');
+  const [password, setPassword] = useState<string>('admin123');
   const [username, setUsername] = useState<string>('');
   const [nombreCompleto, setNombreCompleto] = useState<string>('');
   const [rol, setRol] = useState<UserRegisterPayload['rol']>('ADMIN');
@@ -38,9 +42,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
       }
     } else {
       try {
-        const res = await loginUser({ email, password });
-        localStorage.setItem('access_token', res.access_token);
-        onLoginSuccess(res);
+        await onLogin(email, password);
       } catch {
         setError('Credenciales incorrectas o el servidor backend está apagado.');
       }
@@ -54,7 +56,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
           RENOVAL<span className="text-lime-400">SYS</span>
         </h2>
         <p className="text-xs text-gray-400 text-center mb-4">
-          {isRegistering ? 'Crear nueva cuenta de usuario' : 'Ingreso unificado (Admin y Clientes)'}
+          {isRegistering ? 'Crear nueva cuenta de usuario' : 'Ingreso por rol (Administrador / Operador)'}
         </p>
 
         {error && <div className="p-2 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded text-center">{error}</div>}
@@ -88,6 +90,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
                   className="bg-transparent border-none outline-none text-sm w-full text-white"
                 >
                   <option value="ADMIN" className="bg-[#10141d]">Administrador</option>
+                  <option value="OPERADOR" className="bg-[#10141d]">Operador de Transporte</option>
                   <option value="CLIENTE" className="bg-[#10141d]">Cliente</option>
                   <option value="OPERADOR_PLANTA" className="bg-[#10141d]">Operador de Planta</option>
                   <option value="ALMACENISTA" className="bg-[#10141d]">Almacenista</option>
@@ -99,10 +102,10 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
         )}
 
         <div>
-          <label className="text-xs text-gray-400">Correo Electrónico:</label>
+          <label className="text-xs text-gray-400">Usuario o Correo Electrónico:</label>
           <div className="flex items-center gap-2 bg-[#181d29] border border-[#252c3d] p-2 rounded-xl mt-1">
             <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-transparent border-none outline-none text-sm w-full text-white" required />
+            <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin / admin123" className="bg-transparent border-none outline-none text-sm w-full text-white" required />
           </div>
         </div>
 
