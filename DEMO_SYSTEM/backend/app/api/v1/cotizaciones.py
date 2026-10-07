@@ -27,6 +27,8 @@ class CotizacionSchema(BaseModel):
     costo_saque: float
     costo_cepillado: float
     costo_transporte: float
+    costo_variable: float = 50.0  # C.V.
+    costo_directo: float = 20.0   # C.D.
     elementos: List[ElementoMaderaSchema]
 
 @router.post("/calcular")
@@ -42,14 +44,24 @@ def calcular_y_guardar_cotizacion(payload: CotizacionSchema, db: Session = Depen
         (((el.ancho_in * el.grueso_in * el.largo_in) / 144.0) * el.precio_pie_tabla * el.piezas_por_tarima)
         for el in payload.elementos
     )
-    costos_adicionales = payload.costo_estufa_ht + payload.costo_saque + payload.costo_cepillado + payload.costo_transporte
+    
+    # Suma de costos adicionales incluyendo C.V. y C.D.
+    costos_adicionales = (
+        payload.costo_estufa_ht + 
+        payload.costo_saque + 
+        payload.costo_cepillado + 
+        payload.costo_transporte + 
+        payload.costo_variable + 
+        payload.costo_directo
+    )
+    
     costo_total_unitario = round(costo_madera + costos_adicionales, 2)
     utilidad_unitaria = round(payload.precio_sugerido_unidad - costo_total_unitario, 2)
 
     # 3. Generar Folio
     folio_generado = f"COT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-    # 4. Guardar en Base de Datos MySQL
+    # 4. Guardar en MySQL
     nueva_cotizacion = CotizacionDB(
         folio=folio_generado,
         atencion=payload.atencion,

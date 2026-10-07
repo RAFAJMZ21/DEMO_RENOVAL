@@ -47,7 +47,7 @@ app.include_router(logistica.router, prefix="/api/v1/logistica", tags=["Logísti
 
 
 # ------------------------------------------------------------------------------
-# Endpoints Complementarios de Métricas y Consulta de Tarifas
+# Endpoints Complementarios de Métricas
 # ------------------------------------------------------------------------------
 @app.get("/api/v1/dashboard/metrics", tags=["Dashboard"])
 def obtener_metricas():
@@ -65,17 +65,6 @@ def obtener_metricas():
         "ht_en_proceso_piezas": 2400,
         "certificados_liberados": 15
     }
-
-@app.get("/api/v1/logistica/fletes-destino", tags=["Logística & Despacho"])
-def obtener_fletes_destino():
-    """Retorna la matriz de fletes parametrizada según Costos 2026.xlsx"""
-    return [
-        {"estado": "CDMX", "municipio": "Miguel Hidalgo", "km": 51, "precio_flete": 4300.0, "capacidad": 200, "costo_tarima_unitario": 21.50},
-        {"estado": "Querétaro", "municipio": "Parque Industrial Aerotech", "km": 205, "precio_flete": 11500.0, "capacidad": 200, "costo_tarima_unitario": 57.50},
-        {"estado": "CDMX", "municipio": "Ixtapaluca", "km": 80, "precio_flete": 6000.0, "capacidad": 200, "costo_tarima_unitario": 30.00},
-        {"estado": "CDMX", "municipio": "Azcapotzalco", "km": 55, "precio_flete": 4600.0, "capacidad": 200, "costo_tarima_unitario": 23.00},
-        {"estado": "Edomex", "municipio": "Cuautitlán", "km": 48, "precio_flete": 9300.0, "capacidad": 480, "costo_tarima_unitario": 19.38}
-    ]
 
 # ------------------------------------------------------------------------------
 # Seeder Inicial de Base de Datos MySQL

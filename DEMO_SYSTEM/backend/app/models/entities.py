@@ -51,3 +51,18 @@ class LoteProduccionDB(Base):
     fecha_inicio = Column(Date)
     fecha_fin_estimada = Column(Date)
     area_asignada = Column(String(100))
+
+# --- NUEVA ENTIDAD PARA DESTINOS LOGÍSTICOS ---
+class DestinoLogisticaDB(Base):
+    __tablename__ = "destinos_logistica"
+
+    id = Column(Integer, primary_key=True, index=True)
+    estado = Column(String(100), nullable=False)
+    municipio = Column(String(100), nullable=False)
+    km = Column(Float, nullable=False)
+    costo_gasolina = Column(Float, nullable=False)
+    costo_casetas = Column(Float, nullable=False)
+    precio_flete_total = Column(Float, nullable=False)
+    capacidad_tarimas = Column(Integer, nullable=False)
+    costo_tarima_unitario = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

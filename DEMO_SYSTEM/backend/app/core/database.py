@@ -3,8 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Configuración de conexión a MySQL
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/renoval_system_db"
-
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@localhost:3306/renoval_system_db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
