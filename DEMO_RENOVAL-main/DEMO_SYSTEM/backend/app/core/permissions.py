@@ -1,9 +1,8 @@
 from enum import Enum
 from typing import List, Set
 from fastapi import Depends, HTTPException, status
-from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.entities import UsuarioDB
-from sqlalchemy.orm import Session
 
 
 class Module(str, Enum):
@@ -101,9 +100,6 @@ def require_roles(*allowed_roles: Role):
             )
         return current_user
     return dependency
-
-
-from app.api.v1.auth import get_current_user
 
 
 def require_module(module: Module):

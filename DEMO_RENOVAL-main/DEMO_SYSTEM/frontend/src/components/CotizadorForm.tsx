@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getFletesDestino } from '../api/modulos';
+import { getFletesDestino, getClientes } from '../api/modulos';
 import { PLANTILLAS_TARIMAS } from '../data/plantillasTarimas';
-import type { ElementoMadera, CotizacionPayload } from '../types';
+import type { ElementoMadera, CotizacionPayload, ClienteSchema } from '../types';
 import { Plus, Trash2, Calculator, Info, Truck, Layers, Sparkles } from 'lucide-react';
 
 export const CotizadorForm: React.FC<{ onSubmit: (data: CotizacionPayload) => void }> = ({ onSubmit }) => {
@@ -11,6 +11,7 @@ export const CotizadorForm: React.FC<{ onSubmit: (data: CotizacionPayload) => vo
   const [nombreProducto, setNombreProducto] = useState<string>('Tarima de barrote con saque 40" x 48"');
   const [cantidad, setCantidad] = useState<number>(800);
   const [precioSugerido, setPrecioSugerido] = useState<number>(380);
+  const [clienteId, setClienteId] = useState<number>(1);
 
   const [estufaHt, setEstufaHt] = useState<number>(0);
   const [saque, setSaque] = useState<number>(5);
@@ -21,6 +22,12 @@ export const CotizadorForm: React.FC<{ onSubmit: (data: CotizacionPayload) => vo
   const { data: rutasFlete } = useQuery({
     queryKey: ['fletes-destino'],
     queryFn: getFletesDestino,
+  });
+
+  // Consulta de Clientes
+  const { data: clientes } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: getClientes,
   });
 
   const [elementos, setElementos] = useState<ElementoMadera[]>([
@@ -86,8 +93,12 @@ export const CotizadorForm: React.FC<{ onSubmit: (data: CotizacionPayload) => vo
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
+    if (!clienteId) {
+      alert('Seleccione un cliente');
+      return;
+    }
     onSubmit({
-      cliente_id: 1,
+      cliente_id: clienteId,
       atencion,
       nombre_producto: nombreProducto,
       cantidad_piezas: cantidad,
@@ -133,7 +144,23 @@ export const CotizadorForm: React.FC<{ onSubmit: (data: CotizacionPayload) => vo
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label className="block text-xs text-gray-400">Cliente:</label>
+          <select 
+            value={clienteId} 
+            onChange={(e) => setClienteId(Number(e.target.value))}
+            className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500"
+            required
+          >
+            <option value="">-- Seleccionar Cliente --</option>
+            {clientes?.map((c: ClienteSchema) => (
+              <option key={c.id} value={c.id}>
+                {c.razon_social}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="block text-xs text-gray-400">Atención a:</label>
           <input type="text" value={atencion} onChange={(e) => setAtencion(e.target.value)} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" required />

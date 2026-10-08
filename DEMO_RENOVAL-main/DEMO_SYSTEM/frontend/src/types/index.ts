@@ -38,6 +38,8 @@ export type Module =
   | 'logistica'
   | 'certificados'
   | 'usuarios'
+  | 'fichas'
+  | 'mermas'
   | 'reportes'
   | 'configuracion';
 
@@ -170,4 +172,42 @@ export interface CertificadoFitosanitario {
   temperatura_alcanzada: number;
   tiempo_sostenimiento_min: number;
   fecha_emision: string;
+}
+
+export interface ClienteSchema {
+  id: number;
+  razon_social: string;
+  rfc: string;
+  limite_credito: number;
+  credito_utilizado: number;
+  anticipos_registrados: number;
+  created_at: string;
+}
+
+export interface FichaNormativa {
+  id: number;
+  titulo: string;
+  norma: string;
+  capacidad: string;
+  madera: string;
+  descripcion?: string;
+  archivo_pdf?: string;
+}
+
+export interface MermaCreate {
+  folio_lote: string;
+  pt_teoricos: number;
+  pt_reales_utilizados: number;
+  pt_desperdicio: number;
+  porcentaje_scrap: number;
+  causa_principal: string;
+}
+
+export interface Usuario {
+  id: number;
+  username: string;
+  email: string;
+  nombre_completo: string;
+  rol: string;
+  created_at: string;
 }

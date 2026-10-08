@@ -10,6 +10,8 @@ import { InventarioMaderaView } from './components/InventarioMaderaView';
 import { InsumosClavadoView } from './components/InsumosClavadoView';
 import { LogisticaDespachoView } from './components/LogisticaDespachoView';
 import { GestionUsuariosView } from './components/GestionUsuariosView';
+import { FichasNormativasView } from './components/FichasNormativasView';
+import { MermasView } from './components/MermasView';
 import { LoginForm } from './components/LoginForm';
 import { calcularCotizacion } from './api/cotizaciones';
 import type { CotizacionPayload, TokenResponse, Role } from './types';
@@ -94,6 +96,8 @@ export const AppContent: React.FC = () => {
       case 'logistica': return <LogisticaDespachoView />;
       case 'clientes': return <ClientesView />;
       case 'usuarios': return <GestionUsuariosView />;
+      case 'fichas': return <FichasNormativasView />;
+      case 'mermas': return <MermasView />;
       case 'reportes': return <div className="text-center py-12 text-gray-400">Reportes - En desarrollo</div>;
       case 'configuracion': return <div className="text-center py-12 text-gray-400">Configuración - En desarrollo</div>;
       default: return null;

@@ -1,22 +1,14 @@
-from datetime import datetime, timedelta
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
-from passlib.context import CryptContext
-from jose import jwt, JWTError
 
 from app.core.database import get_db
+from app.core.security import get_current_user, create_access_token, pwd_context
 from app.models.entities import UsuarioDB
+from app.core.permissions import require_roles, Role
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer(auto_error=False)
 
-SECRET_KEY = "renoval_secret_key_2026_change_in_production"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 480
 
 class UserRegister(BaseModel):
     username: str
@@ -25,47 +17,11 @@ class UserRegister(BaseModel):
     nombre_completo: str
     rol: str
 
+
 class UserLogin(BaseModel):
     email: str
     password: str
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-) -> UsuarioDB:
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Token de autorización requerido")
-    
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Token inválido")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Token inválido o expirado")
-    
-    usuario = db.query(UsuarioDB).filter(UsuarioDB.email == email).first()
-    if not usuario:
-        raise HTTPException(status_code=401, detail="Usuario no encontrado")
-    
-    return usuario
-
-def get_current_user_optional(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-) -> Optional[UsuarioDB]:
-    if not credentials:
-        return None
-    try:
-        return get_current_user(credentials, db)
-    except HTTPException:
-        return None
 
 @router.post("/registro")
 def registrar_usuario(usuario: UserRegister, db: Session = Depends(get_db)):
@@ -82,6 +38,7 @@ def registrar_usuario(usuario: UserRegister, db: Session = Depends(get_db)):
     db.add(nuevo_usuario)
     db.commit()
     return {"status": "exito", "mensaje": "Usuario creado correctamente"}
+
 
 @router.post("/login")
 def iniciar_sesion(credenciales: UserLogin, db: Session = Depends(get_db)):
@@ -104,6 +61,7 @@ def iniciar_sesion(credenciales: UserLogin, db: Session = Depends(get_db)):
         }
     }
 
+
 @router.get("/me")
 def obtener_perfil(usuario: UsuarioDB = Depends(get_current_user)):
     return {
@@ -115,8 +73,25 @@ def obtener_perfil(usuario: UsuarioDB = Depends(get_current_user)):
         "created_at": usuario.created_at
     }
 
+
 @router.get("/me/modules")
 def obtener_modulos_usuario(usuario: UsuarioDB = Depends(get_current_user)):
     from app.core.permissions import get_user_modules, get_modules_metadata
     modules = get_user_modules(usuario.rol)
     return get_modules_metadata(modules)
+
+
+@router.get("/usuarios", dependencies=[Depends(require_roles(Role.ADMIN))])
+def listar_usuarios(db: Session = Depends(get_db)):
+    usuarios = db.query(UsuarioDB).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "nombre_completo": u.nombre_completo,
+            "rol": u.rol,
+            "created_at": u.created_at.isoformat() if u.created_at else ""
+        }
+        for u in usuarios
+    ]

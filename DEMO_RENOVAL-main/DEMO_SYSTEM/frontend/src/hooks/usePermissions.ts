@@ -13,23 +13,26 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
   logistica: { module: 'logistica', label: 'Logística y Despacho', icon: 'Truck', path: '/logistica' },
   certificados: { module: 'certificados', label: 'Certificados HT', icon: 'Award', path: '/certificados' },
   usuarios: { module: 'usuarios', label: 'Gestión de Usuarios', icon: 'UserCog', path: '/usuarios' },
+  fichas: { module: 'fichas', label: 'Fichas Normativas', icon: 'FolderOpen', path: '/fichas' },
+  mermas: { module: 'mermas', label: 'Control de Mermas', icon: 'AlertTriangle', path: '/mermas' },
   reportes: { module: 'reportes', label: 'Reportes', icon: 'FileText', path: '/reportes' },
   configuracion: { module: 'configuracion', label: 'Configuración', icon: 'Settings', path: '/configuracion' },
 };
 
 export const ROLE_MODULES: Record<Role, string[]> = {
   ADMIN: Object.keys(MODULE_CONFIG),
-  CLIENTE: ['dashboard', 'cotizaciones', 'logistica', 'certificados'],
-  OPERADOR: ['dashboard', 'produccion', 'gantt', 'fitosanitario', 'inventario_madera'],
-  ALMACENISTA: ['dashboard', 'inventario_madera', 'insumos', 'logistica', 'certificados'],
-  PROVEEDOR: ['dashboard', 'logistica', 'certificados'],
+  CLIENTE: ['dashboard', 'cotizaciones', 'logistica', 'certificados', 'fichas'],
+  OPERADOR: ['dashboard', 'produccion', 'gantt', 'fitosanitario', 'inventario_madera', 'fichas', 'mermas'],
+  ALMACENISTA: ['dashboard', 'inventario_madera', 'insumos', 'logistica', 'certificados', 'fichas'],
+  PROVEEDOR: ['dashboard', 'logistica', 'certificados', 'fichas'],
 };
 
 export const MODULE_GROUPS = {
   operaciones: ['dashboard', 'cotizaciones'],
   almacen: ['inventario_madera', 'insumos'],
-  produccion: ['produccion', 'gantt', 'fitosanitario', 'certificados'],
+  produccion: ['produccion', 'gantt', 'fitosanitario', 'certificados', 'mermas'],
   logistica: ['logistica'],
+  normativa: ['fichas'],
   administracion: ['clientes', 'usuarios', 'reportes', 'configuracion'],
 } as const;
 
@@ -38,6 +41,7 @@ export const GROUP_LABELS: Record<string, string> = {
   almacen: 'MATERIA PRIMA & ALMACÉN',
   produccion: 'PRODUCCIÓN & NORMATIVA',
   logistica: 'LOGÍSTICA & DESPACHO',
+  normativa: 'FICHAS NORMATIVAS',
   administracion: 'ADMINISTRACIÓN',
 };
 
