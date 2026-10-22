@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import date, datetime
 from sqlalchemy.orm import Session
 
@@ -176,3 +176,46 @@ def actualizar_embarque(embarque_id: int, embarque: EmbarqueCreate, db: Session 
     db.commit()
     db.refresh(db_embarque)
     return db_embarque
+
+
+class FleteUpdate(BaseModel):
+    estado: Optional[str] = None
+    municipio: Optional[str] = None
+    km: Optional[int] = None
+    precio_flete: Optional[float] = None
+    capacidad: Optional[int] = None
+    costo_tarima_unitario: Optional[float] = None
+    activo: Optional[bool] = None
+
+
+@router.put("/fletes-destino/{flete_id}", response_model=FleteTarifaSchema, dependencies=[Depends(require_roles(Role.ADMIN, Role.ALMACENISTA))])
+def actualizar_flete(flete_id: int, flete: FleteUpdate, db: Session = Depends(get_db)):
+    db_flete = db.query(FleteTarifaDB).filter(FleteTarifaDB.id == flete_id).first()
+    if not db_flete:
+        raise HTTPException(status_code=404, detail="Flete no encontrado")
+    update_data = flete.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_flete, key, value)
+    db.commit()
+    db.refresh(db_flete)
+    return db_flete
+
+
+@router.delete("/fletes-destino/{flete_id}", dependencies=[Depends(require_roles(Role.ADMIN))])
+def eliminar_flete(flete_id: int, db: Session = Depends(get_db)):
+    db_flete = db.query(FleteTarifaDB).filter(FleteTarifaDB.id == flete_id).first()
+    if not db_flete:
+        raise HTTPException(status_code=404, detail="Flete no encontrado")
+    db.delete(db_flete)
+    db.commit()
+    return {"mensaje": "Flete eliminado correctamente"}
+
+
+@router.delete("/embarques/{embarque_id}", dependencies=[Depends(require_roles(Role.ADMIN))])
+def eliminar_embarque(embarque_id: int, db: Session = Depends(get_db)):
+    db_embarque = db.query(EmbarqueDespachoDB).filter(EmbarqueDespachoDB.id == embarque_id).first()
+    if not db_embarque:
+        raise HTTPException(status_code=404, detail="Embarque no encontrado")
+    db.delete(db_embarque)
+    db.commit()
+    return {"mensaje": "Embarque eliminado correctamente"}

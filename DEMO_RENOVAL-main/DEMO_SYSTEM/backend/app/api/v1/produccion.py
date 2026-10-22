@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import date
 from sqlalchemy.orm import Session
 
@@ -119,3 +119,63 @@ def actualizar_lote(lote_id: int, lote: LoteCreate, db: Session = Depends(get_db
 @router.get("/mermas-scrap", response_model=List[ControlMermaSchema], dependencies=[Depends(require_roles(Role.ADMIN, Role.OPERADOR))])
 def obtener_mermas(db: Session = Depends(get_db)):
     return db.query(ControlMermaDB).order_by(ControlMermaDB.created_at.desc()).all()
+
+
+class MermaCreate(BaseModel):
+    folio_lote: str
+    pt_teoricos: float
+    pt_reales_utilizados: float
+    pt_desperdicio: float
+    porcentaje_scrap: float
+    causa_principal: str
+
+
+class MermaUpdate(BaseModel):
+    folio_lote: Optional[str] = None
+    pt_teoricos: Optional[float] = None
+    pt_reales_utilizados: Optional[float] = None
+    pt_desperdicio: Optional[float] = None
+    porcentaje_scrap: Optional[float] = None
+    causa_principal: Optional[str] = None
+
+
+@router.post("/mermas-scrap", response_model=ControlMermaSchema, dependencies=[Depends(require_roles(Role.ADMIN, Role.OPERADOR))])
+def crear_merma(merma: MermaCreate, db: Session = Depends(get_db)):
+    nueva = ControlMermaDB(**merma.model_dump())
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
+    return nueva
+
+
+@router.put("/mermas-scrap/{merma_id}", response_model=ControlMermaSchema, dependencies=[Depends(require_roles(Role.ADMIN, Role.OPERADOR))])
+def actualizar_merma(merma_id: int, merma: MermaUpdate, db: Session = Depends(get_db)):
+    db_merma = db.query(ControlMermaDB).filter(ControlMermaDB.id == merma_id).first()
+    if not db_merma:
+        raise HTTPException(status_code=404, detail="Registro de merma no encontrado")
+    update_data = merma.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_merma, key, value)
+    db.commit()
+    db.refresh(db_merma)
+    return db_merma
+
+
+@router.delete("/mermas-scrap/{merma_id}", dependencies=[Depends(require_roles(Role.ADMIN, Role.OPERADOR))])
+def eliminar_merma(merma_id: int, db: Session = Depends(get_db)):
+    db_merma = db.query(ControlMermaDB).filter(ControlMermaDB.id == merma_id).first()
+    if not db_merma:
+        raise HTTPException(status_code=404, detail="Registro de merma no encontrado")
+    db.delete(db_merma)
+    db.commit()
+    return {"mensaje": "Registro de merma eliminado correctamente"}
+
+
+@router.delete("/gantt/{lote_id}", dependencies=[Depends(require_roles(Role.ADMIN, Role.OPERADOR))])
+def eliminar_lote(lote_id: int, db: Session = Depends(get_db)):
+    db_lote = db.query(LoteProduccionDB).filter(LoteProduccionDB.id == lote_id).first()
+    if not db_lote:
+        raise HTTPException(status_code=404, detail="Lote no encontrado")
+    db.delete(db_lote)
+    db.commit()
+    return {"mensaje": "Lote eliminado correctamente"}

@@ -248,6 +248,15 @@ export const deleteMerma = async (id: number) => {
   await api.delete(`v1/produccion/mermas-scrap/${id}`);
 };
 
+export const updateMerma = async (id: number, data: MermaCreate) => {
+  const response = await api.put(`v1/produccion/mermas-scrap/${id}`, data);
+  return response.data;
+};
+
+export const deleteConfig = async (id: number) => {
+  await api.delete(`v1/configuracion/${id}`);
+};
+
 // --- PDF ---
 export const downloadCertificadoPDF = async (folio: string): Promise<Blob> => {
   const response = await api.get(`v1/fitosanitario/certificados/${folio}/pdf`, {

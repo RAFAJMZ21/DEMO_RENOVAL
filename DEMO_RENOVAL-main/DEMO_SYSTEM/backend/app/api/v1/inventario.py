@@ -126,3 +126,60 @@ def eliminar_entrada_madera(entrada_id: int, db: Session = Depends(get_db)):
     db.delete(db_entrada)
     db.commit()
     return {"mensaje": "Entrada eliminada correctamente"}
+
+
+class InsumoUpdate(BaseModel):
+    codigo: Optional[str] = None
+    descripcion: Optional[str] = None
+    tipo: Optional[str] = None
+    medida: Optional[str] = None
+    existencia_kg: Optional[float] = None
+    stock_minimo_kg: Optional[float] = None
+    linea_asignada: Optional[str] = None
+
+
+@router.put("/insumos-clavado/{insumo_id}", response_model=InsumoSchema, dependencies=[Depends(require_roles(Role.ADMIN, Role.ALMACENISTA))])
+def actualizar_insumo_parcial(insumo_id: int, insumo: InsumoUpdate, db: Session = Depends(get_db)):
+    db_insumo = db.query(InsumoClavadoDB).filter(InsumoClavadoDB.id == insumo_id).first()
+    if not db_insumo:
+        raise HTTPException(status_code=404, detail="Insumo no encontrado")
+    update_data = insumo.model_dump(exclude_unset=True)
+    if "codigo" in update_data and update_data["codigo"] != db_insumo.codigo:
+        if db.query(InsumoClavadoDB).filter(InsumoClavadoDB.codigo == update_data["codigo"]).first():
+            raise HTTPException(status_code=400, detail="Código ya existe")
+    for key, value in update_data.items():
+        setattr(db_insumo, key, value)
+    db.commit()
+    db.refresh(db_insumo)
+    return db_insumo
+
+
+@router.delete("/insumos-clavado/{insumo_id}", dependencies=[Depends(require_roles(Role.ADMIN, Role.ALMACENISTA))])
+def eliminar_insumo(insumo_id: int, db: Session = Depends(get_db)):
+    db_insumo = db.query(InsumoClavadoDB).filter(InsumoClavadoDB.id == insumo_id).first()
+    if not db_insumo:
+        raise HTTPException(status_code=404, detail="Insumo no encontrado")
+    db.delete(db_insumo)
+    db.commit()
+    return {"mensaje": "Insumo eliminado correctamente"}
+
+
+class EntradaMaderaUpdate(BaseModel):
+    tipo: Optional[str] = None
+    metros_cubicos: Optional[float] = None
+    proveedor: Optional[str] = None
+    fecha: Optional[date] = None
+    observaciones: Optional[str] = None
+
+
+@router.put("/entradas-madera/{entrada_id}", response_model=EntradaMaderaSchema, dependencies=[Depends(require_roles(Role.ADMIN, Role.ALMACENISTA))])
+def actualizar_entrada_madera(entrada_id: int, entrada: EntradaMaderaUpdate, db: Session = Depends(get_db)):
+    db_entrada = db.query(EntradaMaderaDB).filter(EntradaMaderaDB.id == entrada_id).first()
+    if not db_entrada:
+        raise HTTPException(status_code=404, detail="Entrada no encontrada")
+    update_data = entrada.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_entrada, key, value)
+    db.commit()
+    db.refresh(db_entrada)
+    return db_entrada

@@ -109,3 +109,13 @@ def obtener_estado_cuenta(cliente_id: int, db: Session = Depends(get_db)):
         saldo_pendiente=saldo_pendiente,
         historial_pedidos=historial
     )
+
+
+@router.delete("/{cliente_id}", dependencies=[Depends(require_roles(Role.ADMIN))])
+def eliminar_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    db_cliente = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
+    if not db_cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    db.delete(db_cliente)
+    db.commit()
+    return {"mensaje": "Cliente eliminado correctamente"}

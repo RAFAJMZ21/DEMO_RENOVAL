@@ -20,6 +20,9 @@ export const FitosanitarioView: React.FC = () => {
 
   const loteEnHorno = lotes?.find(l => l.etapa_actual === 'HT_FITOSANITARIO');
   const loteDisponible = lotes?.find(l => l.etapa_actual === 'ARMADO');
+  
+  // Buscar certificado del lote en horno para obtener datos reales de temp/tiempo
+  const certLoteEnHorno = loteEnHorno ? certificados?.find(c => c.folio_lote === loteEnHorno.folio_lote) : null;
   const certificadoReciente = certificados?.[0];
 
   if (loadingCerts && !certificados) {
@@ -48,7 +51,7 @@ export const FitosanitarioView: React.FC = () => {
             <div>
               <div className="text-xs text-gray-400">TEMPERATURA NÚCLEO</div>
               <div className="text-2xl font-black text-rose-400">
-                {loteEnHorno ? `${loteEnHorno.porcentaje_avance > 70 ? 58.4 : 56.0} °C` : '56.0 °C'}
+                {certLoteEnHorno ? `${certLoteEnHorno.temperatura_alcanzada} °C` : '—'}
               </div>
               <span className="text-[10px] text-emerald-400 font-bold">✓ Cumple Norma NOM-144 (≥56°C)</span>
             </div>
@@ -59,7 +62,7 @@ export const FitosanitarioView: React.FC = () => {
             <div>
               <div className="text-xs text-gray-400">TIEMPO SOSTENIMIENTO</div>
               <div className="text-2xl font-black text-amber-400">
-                {loteEnHorno ? `${Math.min(42 + Math.floor((loteEnHorno.porcentaje_avance - 70) / 10 * 15), 55)} min` : '30 min'}
+                {certLoteEnHorno ? `${certLoteEnHorno.tiempo_sostenimiento_min} min` : '—'}
               </div>
               <span className="text-[10px] text-gray-400">Mínimo requerido: 30 min</span>
             </div>
@@ -94,7 +97,7 @@ export const FitosanitarioView: React.FC = () => {
             <tr>
               <td className="p-3 font-bold text-white">Horno Estufado HT-01</td>
               <td className="p-3 text-emerald-400 font-mono">
-                {loteEnHorno?.folio_lote || 'LOT-2026-001'}
+                {loteEnHorno?.folio_lote || '—'}
               </td>
               <td className="p-3">1,200 tarimas</td>
               <td className="p-3">
@@ -104,8 +107,14 @@ export const FitosanitarioView: React.FC = () => {
                   {loteEnHorno ? `En Tratamiento (${loteEnHorno.porcentaje_avance}%)` : 'Listo para Carga'}
                 </span>
               </td>
-              <td className="p-3 text-gray-400">
-                {loteEnHorno && loteEnHorno.porcentaje_avance === 100 ? 'Generando...' : 'En proceso'}
+              <td className="p-3">
+                {certLoteEnHorno ? (
+                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-bold">
+                    Emitido ({certLoteEnHorno.folio_certificado})
+                  </span>
+                ) : (
+                  <span className="text-gray-400">Pendiente</span>
+                )}
               </td>
             </tr>
             <tr>

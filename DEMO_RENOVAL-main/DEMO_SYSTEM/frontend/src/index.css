@@ -2,40 +2,40 @@
 
 @theme {
   /* ===== LIGHT MODE (default) ===== */
-  --color-background: hsl(220 20% 98%);
-  --color-foreground: hsl(220 15% 12%);
+  --color-background: hsl(145 50% 97%);
+  --color-foreground: hsl(145 25% 15%);
 
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(220 15% 12%);
+  --color-card-foreground: hsl(145 25% 15%);
 
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(220 15% 12%);
+  --color-popover-foreground: hsl(145 25% 15%);
 
   --color-primary: hsl(357 90% 52%);
   --color-primary-foreground: hsl(0 0% 100%);
 
-  --color-secondary: hsl(220 15% 92%);
-  --color-secondary-foreground: hsl(220 15% 12%);
+  --color-secondary: hsl(145 25% 92%);
+  --color-secondary-foreground: hsl(145 25% 15%);
 
-  --color-muted: hsl(220 15% 94%);
-  --color-muted-foreground: hsl(220 10% 45%);
+  --color-muted: hsl(145 20% 94%);
+  --color-muted-foreground: hsl(145 15% 45%);
 
-  --color-accent: hsl(220 15% 92%);
-  --color-accent-foreground: hsl(220 15% 12%);
+  --color-accent: hsl(145 25% 92%);
+  --color-accent-foreground: hsl(145 25% 15%);
 
   --color-destructive: hsl(357 90% 52%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
-  --color-border: hsl(220 15% 86%);
-  --color-input: hsl(220 15% 86%);
+  --color-border: hsl(145 25% 86%);
+  --color-input: hsl(145 25% 86%);
   --color-ring: hsl(357 90% 52%);
 
   /* Sidebar specific */
   --color-sidebar: hsl(0 0% 100%);
-  --color-sidebar-foreground: hsl(220 15% 12%);
-  --color-sidebar-border: hsl(220 15% 86%);
-  --color-sidebar-accent: hsl(220 15% 92%);
-  --color-sidebar-accent-foreground: hsl(220 15% 12%);
+  --color-sidebar-foreground: hsl(145 25% 15%);
+  --color-sidebar-border: hsl(145 25% 86%);
+  --color-sidebar-accent: hsl(145 25% 92%);
+  --color-sidebar-accent-foreground: hsl(145 25% 15%);
 
   /* Radius */
   --radius-sm: 0.25rem;
@@ -45,10 +45,10 @@
   --radius-2xl: 1rem;
 
   /* Shadows for light mode - subtle but visible */
-  --shadow-sm: 0 1px 2px 0 hsl(220 15% 12% / 0.05);
-  --shadow-md: 0 4px 6px -1px hsl(220 15% 12% / 0.1), 0 2px 4px -2px hsl(220 15% 12% / 0.1);
-  --shadow-lg: 0 10px 15px -3px hsl(220 15% 12% / 0.1), 0 4px 6px -4px hsl(220 15% 12% / 0.1);
-  --shadow-xl: 0 20px 25px -5px hsl(220 15% 12% / 0.1), 0 8px 10px -6px hsl(220 15% 12% / 0.1);
+  --shadow-sm: 0 1px 2px 0 hsl(145 25% 15% / 0.05);
+  --shadow-md: 0 4px 6px -1px hsl(145 25% 15% / 0.1), 0 2px 4px -2px hsl(145 25% 15% / 0.1);
+  --shadow-lg: 0 10px 15px -3px hsl(145 25% 15% / 0.1), 0 4px 6px -4px hsl(145 25% 15% / 0.1);
+  --shadow-xl: 0 20px 25px -5px hsl(145 25% 15% / 0.1), 0 8px 10px -6px hsl(145 25% 15% / 0.1);
 }
 
 @media (prefers-color-scheme: dark) {

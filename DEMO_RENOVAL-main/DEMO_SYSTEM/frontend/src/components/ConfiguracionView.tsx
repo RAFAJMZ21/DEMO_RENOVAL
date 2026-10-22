@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Settings, Plus, Loader2, Edit, Trash2, Key, Palette, Bell, Shield, Database, Save, RotateCcw } from 'lucide-react';
 import { Modal, ConfirmModal, Toast } from './ui/Modal';
 import api from '../api/axios';
+import { deleteConfig } from '../api/modulos';
 
 interface ConfigItem {
   id: number;
@@ -154,7 +155,7 @@ export const ConfiguracionView: React.FC = () => {
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
     try {
-      await api.delete(`v1/configuracion/${deleteConfirm.id}`);
+      await deleteConfig(deleteConfirm.id);
       refetch();
       setToast({ message: 'Configuración eliminada correctamente', type: 'success' });
     } catch {
