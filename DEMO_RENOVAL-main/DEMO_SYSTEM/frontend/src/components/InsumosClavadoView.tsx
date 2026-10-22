@@ -220,12 +220,12 @@ export const InsumosClavadoView: React.FC = () => {
           </div>
           <div>
             <label className="block text-xs text-gray-400">Descripción *</label>
-            <input type="text" value={formData.descripcion} onChange={(e) => setFormData({...formData, descripcion: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" required placeholder="Ej: Clavo Espiral en Rollo 2 1/2\"" />
+            <input type="text" value={formData.descripcion} onChange={(e) => setFormData({...formData, descripcion: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" required placeholder='Ej: Clavo Espiral en Rollo 2 1/2"' />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-gray-400">Medida *</label>
-              <input type="text" value={formData.medida} onChange={(e) => setFormData({...formData, medida: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" required placeholder="Ej: 2 1/2\"" />
+              <input type="text" value={formData.medida} onChange={(e) => setFormData({...formData, medida: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" required placeholder='Ej: 2 1/2"' />
             </div>
             <div>
               <label className="block text-xs text-gray-400">Línea Asignada *</label>

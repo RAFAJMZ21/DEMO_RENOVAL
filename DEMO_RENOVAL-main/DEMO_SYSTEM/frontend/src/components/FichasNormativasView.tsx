@@ -1,8 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FolderOpen, FileText, Download, Plus, Edit, Trash2, Loader2 } from 'lucide-react';
+import { FolderOpen, FileText, Download, Plus, Edit, Trash2, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
 import { getFichasNormativas, createFichaNormativa, updateFichaNormativa, deleteFichaNormativa } from '../api/modulos';
 import type { FichaNormativa } from '../types';
+import api from '../api/axios';
 
 export const FichasNormativasView: React.FC = () => {
   const { data: fichas, isLoading, refetch } = useQuery({
@@ -21,6 +22,8 @@ export const FichasNormativasView: React.FC = () => {
     descripcion: '',
     archivo_pdf: '',
   });
+
+  const [downloading, setDownloading] = React.useState<number | null>(null);
 
   const handleOpenCreate = () => {
     setEditingFicha(null);
@@ -73,8 +76,36 @@ export const FichasNormativasView: React.FC = () => {
     }
   };
 
-  const handleDownload = (ficha: FichaNormativa) => {
-    alert(`Descargando PDF: ${ficha.titulo}`);
+  const handleDownload = async (ficha: FichaNormativa) => {
+    if (!ficha.archivo_pdf) {
+      alert('Esta ficha no tiene archivo PDF asociado');
+      return;
+    }
+    setDownloading(ficha.id);
+    try {
+      const response = await api.get(ficha.archivo_pdf, {
+        responseType: 'blob',
+      });
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${ficha.titulo.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error descargando PDF:', error);
+      // Fallback: open in new tab
+      window.open(ficha.archivo_pdf, '_blank');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handleOpenPDF = (url: string) => {
+    window.open(url, '_blank');
   };
 
   if (isLoading && !fichas) {
@@ -118,9 +149,42 @@ export const FichasNormativasView: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
-              <button onClick={() => handleDownload(f)} className="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-xs py-2 rounded-lg font-bold text-gray-200 transition">
-                <Download className="w-3.5 h-3.5" /> Descargar PDF
-              </button>
+              {f.archivo_pdf ? (
+                <>
+                  <button 
+                    onClick={() => handleDownload(f)} 
+                    disabled={downloading === f.id}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800/50 disabled:cursor-not-allowed text-xs py-2 rounded-lg font-bold text-gray-200 transition"
+                  >
+                    {downloading === f.id ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Descargando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" /> Descargar PDF
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => handleOpenPDF(f.archivo_pdf!)} 
+                    className="p-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition" 
+                    title="Abrir en nueva pestaña"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="flex-1 flex items-center justify-center gap-2 bg-gray-800/50 text-gray-500 cursor-not-allowed text-xs py-2 rounded-lg font-bold" disabled>
+                    <Download className="w-3.5 h-3.5" /> Sin PDF
+                  </button>
+                  <button className="p-2 bg-gray-800/50 text-gray-500 border border-gray-500/20 rounded-lg cursor-not-allowed" disabled title="Sin archivo">
+                    <AlertCircle className="w-4 h-4" />
+                  </button>
+                </>
+              )}
               <button onClick={() => handleOpenEdit(f)} className="p-2 bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 rounded-lg hover:bg-emerald-950/80 transition" title="Editar">
                 <Edit className="w-4 h-4" />
               </button>
@@ -173,7 +237,8 @@ export const FichasNormativasView: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs text-gray-400">Archivo PDF (URL)</label>
-                <input type="text" value={formData.archivo_pdf} onChange={(e) => setFormData({...formData, archivo_pdf: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" />
+                <input type="text" value={formData.archivo_pdf} onChange={(e) => setFormData({...formData, archivo_pdf: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" placeholder="https://ejemplo.com/archivo.pdf" />
+                <p className="text-[10px] text-gray-500 mt-1">URL pública del archivo PDF</p>
               </div>
               <div className="flex gap-2 pt-4">
                 <button type="button" onClick={handleCloseModal} className="flex-1 bg-gray-800 text-gray-300 py-2.5 rounded-xl font-bold hover:bg-gray-700">Cancelar</button>

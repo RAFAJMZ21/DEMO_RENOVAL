@@ -8,7 +8,8 @@ from app.core.database import engine, Base, get_db
 from app.models.entities import (
     UsuarioDB, ClienteDB, CotizacionDB, LoteProduccionDB,
     InsumoClavadoDB, CertificadoFitosanitarioDB, EmbarqueDespachoDB,
-    FleteTarifaDB, ControlMermaDB, FichaNormativaDB, DestinoLogisticaDB
+    FleteTarifaDB, ControlMermaDB, FichaNormativaDB, DestinoLogisticaDB,
+    ConfiguracionDB, EntradaMaderaDB
 )
 
 # Importar routers modulares completos de la carpeta app/api/v1
@@ -19,7 +20,9 @@ from app.api.v1 import (
     inventario,
     produccion,
     fitosanitario,
-    logistica
+    logistica,
+    fichas,
+    configuracion
 )
 
 settings = get_settings()
@@ -47,10 +50,12 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Autenticación"])
 app.include_router(clientes.router, prefix="/api/v1/clientes", tags=["Clientes"])
 app.include_router(cotizaciones.router, prefix="/api/v1/cotizaciones", tags=["Cotizaciones"])
-app.include_router(inventario.router, prefix="/v1/almacen", tags=["Almacén e Inventario"])
+app.include_router(inventario.router, prefix="/api/v1/almacen", tags=["Almacén e Inventario"])
 app.include_router(produccion.router, prefix="/api/v1/produccion", tags=["Producción"])
 app.include_router(fitosanitario.router, prefix="/api/v1/fitosanitario", tags=["Norma NOM-144"])
 app.include_router(logistica.router, prefix="/api/v1/logistica", tags=["Logística & Despacho"])
+app.include_router(fichas.router, prefix="/api/v1/fichas-normativas", tags=["Fichas Normativas"])
+app.include_router(configuracion.router, prefix="/api/v1/configuracion", tags=["Configuración"])
 
 
 # ------------------------------------------------------------------------------
@@ -159,6 +164,33 @@ def seeder_base_datos():
                 FichaNormativaDB(titulo="Tarima Estándar 40\" x 48\" Barrote Saque", norma="GMA / NOM-144", capacidad="1,500 kg", madera="Pino estufado", descripcion="Tarima de barrote con saque para uso general"),
                 FichaNormativaDB(titulo="Tarima Perimetral Tipo Euro (1200 x 1000)", norma="EPAL / ISO 6780", capacidad="2,000 kg", madera="Pino de primera", descripcion="Tarima perimetral estándar europea"),
                 FichaNormativaDB(titulo="Caja Embalaje Industrial Cerrada", norma="Exportación Pesada", capacidad="3,500 kg", madera="Triplay + Pino reforzado", descripcion="Caja cerrada reforzada para exportación"),
+            ])
+        if db.query(EntradaMaderaDB).count() == 0:
+            from datetime import date
+            db.add_all([
+                EntradaMaderaDB(tipo="VERDE", metros_cubicos=150.0, proveedor="Aserraderos del Valle", fecha=date(2026, 9, 15), observaciones="Troza pino verde"),
+                EntradaMaderaDB(tipo="ESTUFADA", metros_cubicos=80.0, proveedor="Interno (Horno HT-01)", fecha=date(2026, 9, 16), observaciones="Madera estufada lista para producción"),
+                EntradaMaderaDB(tipo="VERDE", metros_cubicos=200.0, proveedor="Maderas del Norte", fecha=date(2026, 9, 18), observaciones="Entrada programada"),
+            ])
+        if db.query(ConfiguracionDB).count() == 0:
+            db.add_all([
+                ConfiguracionDB(clave="empresa_nombre", valor="RENOVAL", descripcion="Nombre de la empresa", categoria="general", tipo="string"),
+                ConfiguracionDB(clave="empresa_sede", valor="Planta Lerma", descripcion="Sede principal", categoria="general", tipo="string"),
+                ConfiguracionDB(clave="moneda", valor="MXN", descripcion="Moneda por defecto", categoria="general", tipo="string"),
+                ConfiguracionDB(clave="zona_horaria", valor="America/Mexico_City", descripcion="Zona horaria", categoria="general", tipo="string"),
+                ConfiguracionDB(clave="pt_factor_conversion", valor="144", descripcion="Factor conversión pies tablares (ancho x grueso x largo / factor)", categoria="produccion", tipo="number"),
+                ConfiguracionDB(clave="ht_temp_minima", valor="56", descripcion="Temperatura mínima HT (°C) NOM-144", categoria="fitosanitario", tipo="number"),
+                ConfiguracionDB(clave="ht_tiempo_minimo", valor="30", descripcion="Tiempo mínimo sostenimiento HT (minutos)", categoria="fitosanitario", tipo="number"),
+                ConfiguracionDB(clave="sello_ht_autorizado", valor="MX-144-HT", descripcion="Prefijo sello HT autorizado SEMARNAT", categoria="fitosanitario", tipo="string"),
+                ConfiguracionDB(clave="capacidad_trailer_pzs", valor="45", descripcion="Capacidad estándar trailer (piezas)", categoria="logistica", tipo="number"),
+                ConfiguracionDB(clave="dias_alerta_vencimiento", valor="3", descripcion="Días antes para alertar vencimientos", categoria="logistica", tipo="number"),
+                ConfiguracionDB(clave="email_notificaciones", valor="true", descripcion="Activar notificaciones por email", categoria="notificaciones", tipo="boolean"),
+                ConfiguracionDB(clave="sms_notificaciones", valor="false", descripcion="Activar notificaciones por SMS", categoria="notificaciones", tipo="boolean"),
+                ConfiguracionDB(clave="tema_por_defecto", valor="dark", descripcion="Tema por defecto (light/dark)", categoria="apariencia", tipo="string"),
+                ConfiguracionDB(clave="color_primario", valor="#357909052", descripcion="Color primario del sistema (HSL: 357 90% 52%)", categoria="apariencia", tipo="string"),
+                ConfiguracionDB(clave="sesion_expiracion_horas", valor="24", descripcion="Expiración de sesión en horas", categoria="seguridad", tipo="number"),
+                ConfiguracionDB(clave="max_intentos_login", valor="5", descripcion="Máximo intentos de login antes de bloqueo", categoria="seguridad", tipo="number"),
+                ConfiguracionDB(clave="requerir_2fa_admin", valor="true", descripcion="Requerir 2FA para administradores", categoria="seguridad", tipo="boolean"),
             ])
         db.commit()
     finally:

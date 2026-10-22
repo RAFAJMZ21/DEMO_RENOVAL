@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+from datetime import date, datetime
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.entities import InsumoClavadoDB
+from app.models.entities import InsumoClavadoDB, EntradaMaderaDB
 from app.core.permissions import require_roles, Role
-from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -72,10 +73,56 @@ def crear_insumo(insumo: InsumoSchema, db: Session = Depends(get_db)):
 def actualizar_insumo(insumo_id: int, insumo: InsumoSchema, db: Session = Depends(get_db)):
     db_insumo = db.query(InsumoClavadoDB).filter(InsumoClavadoDB.id == insumo_id).first()
     if not db_insumo:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Insumo no encontrado")
     for key, value in insumo.model_dump().items():
         setattr(db_insumo, key, value)
     db.commit()
     db.refresh(db_insumo)
     return db_insumo
+
+
+# --- ENTRADAS MADERA ---
+class EntradaMaderaSchema(BaseModel):
+    id: int
+    tipo: str
+    metros_cubicos: float
+    proveedor: str
+    fecha: date
+    observaciones: Optional[str]
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class EntradaMaderaCreate(BaseModel):
+    tipo: str
+    metros_cubicos: float
+    proveedor: str
+    fecha: date
+    observaciones: Optional[str] = None
+
+
+@router.get("/entradas-madera", response_model=List[EntradaMaderaSchema], dependencies=[Depends(require_roles(Role.ADMIN, Role.ALMACENISTA, Role.OPERADOR))])
+def obtener_entradas_madera(db: Session = Depends(get_db)):
+    return db.query(EntradaMaderaDB).order_by(EntradaMaderaDB.fecha.desc()).all()
+
+
+@router.post("/entradas-madera", response_model=EntradaMaderaSchema, dependencies=[Depends(require_roles(Role.ADMIN, Role.ALMACENISTA))])
+def crear_entrada_madera(entrada: EntradaMaderaCreate, db: Session = Depends(get_db)):
+    nueva = EntradaMaderaDB(**entrada.model_dump())
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
+    return nueva
+
+
+@router.delete("/entradas-madera/{entrada_id}", dependencies=[Depends(require_roles(Role.ADMIN, Role.ALMACENISTA))])
+def eliminar_entrada_madera(entrada_id: int, db: Session = Depends(get_db)):
+    db_entrada = db.query(EntradaMaderaDB).filter(EntradaMaderaDB.id == entrada_id).first()
+    if not db_entrada:
+        raise HTTPException(status_code=404, detail="Entrada no encontrada")
+    db.delete(db_entrada)
+    db.commit()
+    return {"mensaje": "Entrada eliminada correctamente"}

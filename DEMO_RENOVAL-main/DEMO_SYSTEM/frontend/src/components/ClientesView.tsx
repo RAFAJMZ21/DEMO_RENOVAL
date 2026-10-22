@@ -50,7 +50,7 @@ export const ClientesView: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleOpenEdit = (cliente: typeof clientes[0]) => {
+  const handleOpenEdit = (cliente: import('../types').ClienteSchema) => {
     setEditingCliente(cliente);
     setFormData({
       razon_social: cliente.razon_social,
@@ -86,7 +86,7 @@ export const ClientesView: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleDelete = (cliente: typeof clientes[0]) => {
+  const handleDelete = (cliente: import('../types').ClienteSchema) => {
     setDeleteConfirm(cliente);
   };
 

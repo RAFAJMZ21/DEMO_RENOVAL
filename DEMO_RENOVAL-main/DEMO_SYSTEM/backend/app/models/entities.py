@@ -160,3 +160,29 @@ class DestinoLogisticaDB(Base):
     capacidad_tarimas = Column(Integer, nullable=False)
     costo_tarima_unitario = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class EntradaMaderaDB(Base):
+    __tablename__ = "entradas_madera"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tipo = Column(String(20), nullable=False)  # VERDE, ESTUFADA
+    metros_cubicos = Column(Float, nullable=False)
+    proveedor = Column(String(150), nullable=False)
+    fecha = Column(Date, nullable=False)
+    observaciones = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ConfiguracionDB(Base):
+    __tablename__ = "configuracion"
+
+    id = Column(Integer, primary_key=True, index=True)
+    clave = Column(String(100), unique=True, index=True, nullable=False)
+    valor = Column(Text, nullable=False)
+    descripcion = Column(String(255))
+    categoria = Column(String(50), nullable=False)
+    tipo = Column(String(20), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

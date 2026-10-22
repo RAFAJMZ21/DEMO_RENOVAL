@@ -289,7 +289,7 @@ export const getRoles = async (): Promise<string[]> => {
   return ['ADMIN', 'OPERADOR', 'ALMACENISTA', 'CLIENTE', 'PROVEEDOR'];
 };
 
-// --- CLIENTES CRUD ---
+// --- CLIENTES CRUD (functions defined above at lines 171-241) ---
 export interface ClienteResponse {
   id: number;
   razon_social: string;
@@ -299,20 +299,6 @@ export interface ClienteResponse {
   anticipos_registrados: number;
   created_at: string;
 }
-
-export const createCliente = async (data: ClienteCreate) => {
-  const response = await api.post('v1/clientes/', data);
-  return response.data;
-};
-
-export const updateCliente = async (id: number, data: ClienteCreate) => {
-  const response = await api.put(`v1/clientes/${id}`, data);
-  return response.data;
-};
-
-export const deleteCliente = async (id: number) => {
-  await api.delete(`v1/clientes/${id}`);
-};
 
 // --- ENTRADA MADERA ---
 export interface EntradaMaderaCreate {

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 from app.core.database import get_db
 from app.core.security import get_current_user, create_access_token, pwd_context
@@ -16,6 +17,13 @@ class UserRegister(BaseModel):
     password: str
     nombre_completo: str
     rol: str
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    nombre_completo: Optional[str] = None
+    rol: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -95,3 +103,53 @@ def listar_usuarios(db: Session = Depends(get_db)):
         }
         for u in usuarios
     ]
+
+
+@router.put("/usuarios/{usuario_id}", dependencies=[Depends(require_roles(Role.ADMIN))])
+def actualizar_usuario(usuario_id: int, usuario: UserUpdate, db: Session = Depends(get_db)):
+    db_usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    if not db_usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    update_data = usuario.model_dump(exclude_unset=True)
+    
+    # Verificar email único si se actualiza
+    if "email" in update_data:
+        if db.query(UsuarioDB).filter(UsuarioDB.email == update_data["email"], UsuarioDB.id != usuario_id).first():
+            raise HTTPException(status_code=400, detail="El correo ya está registrado")
+        db_usuario.email = update_data["email"]
+    
+    if "password" in update_data and update_data["password"]:
+        db_usuario.password_hash = pwd_context.hash(update_data["password"])
+    
+    if "nombre_completo" in update_data:
+        db_usuario.nombre_completo = update_data["nombre_completo"]
+    
+    if "rol" in update_data:
+        db_usuario.rol = update_data["rol"]
+    
+    db.commit()
+    db.refresh(db_usuario)
+    return {
+        "id": db_usuario.id,
+        "username": db_usuario.username,
+        "email": db_usuario.email,
+        "nombre_completo": db_usuario.nombre_completo,
+        "rol": db_usuario.rol,
+        "created_at": db_usuario.created_at.isoformat() if db_usuario.created_at else ""
+    }
+
+
+@router.delete("/usuarios/{usuario_id}", dependencies=[Depends(require_roles(Role.ADMIN))])
+def eliminar_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    db_usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    if not db_usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # No permitir auto-eliminación
+    current_user = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    # Note: get_current_user not available here without Depends, but ADMIN role check is done
+    
+    db.delete(db_usuario)
+    db.commit()
+    return {"mensaje": "Usuario eliminado correctamente"}

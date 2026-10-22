@@ -1,19 +1,44 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getCertificadosFitosanitarios } from '../api/modulos';
-import { ShieldCheck, Download, Flame } from 'lucide-react';
+import { getCertificadosFitosanitarios, downloadCertificadoPDF } from '../api/modulos';
+import { ShieldCheck, Download, Flame, Loader2, AlertCircle } from 'lucide-react';
 
 export const CertificadosView: React.FC = () => {
-  const { data: certificados, isLoading } = useQuery({
+  const { data: certificados, isLoading, refetch } = useQuery({
     queryKey: ['certificados-ht'],
     queryFn: getCertificadosFitosanitarios,
   });
 
-  const handleDescargarPDF = (folio: string) => {
-    alert(`Generando y descargando PDF oficial para el Certificado NOM-144: ${folio}`);
+  const [downloading, setDownloading] = React.useState<string | null>(null);
+
+  const handleDescargarPDF = async (folio: string) => {
+    setDownloading(folio);
+    try {
+      const blob = await downloadCertificadoPDF(folio);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Certificado_${folio}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error descargando PDF:', error);
+      alert('Error al descargar el certificado. Verifique que el certificado existe.');
+    } finally {
+      setDownloading(null);
+    }
   };
 
-  if (isLoading) return <div className="p-6 text-emerald-400">Cargando certificados NOM-144...</div>;
+  if (isLoading && !certificados) {
+    return (
+      <div className="flex justify-center items-center py-20 text-emerald-400">
+        <Loader2 className="w-8 h-8 animate-spin mr-2" />
+        <span>Cargando certificados NOM-144...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-white">
@@ -72,10 +97,20 @@ export const CertificadosView: React.FC = () => {
 
             <button 
               onClick={() => handleDescargarPDF(cert.folio_certificado)}
-              className="w-full flex items-center justify-center gap-2 bg-lime-400 hover:bg-lime-300 text-emerald-950 font-bold py-2.5 rounded-xl transition text-xs shadow-md"
+              disabled={downloading === cert.folio_certificado}
+              className="w-full flex items-center justify-center gap-2 bg-lime-400 hover:bg-lime-300 disabled:bg-lime-400/50 disabled:cursor-not-allowed text-emerald-950 font-bold py-2.5 rounded-xl transition text-xs shadow-md"
             >
-              <Download className="w-4 h-4" />
-              <span>Descargar Certificado PDF</span>
+              {downloading === cert.folio_certificado ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Generando PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Descargar Certificado PDF</span>
+                </>
+              )}
             </button>
           </div>
         ))}

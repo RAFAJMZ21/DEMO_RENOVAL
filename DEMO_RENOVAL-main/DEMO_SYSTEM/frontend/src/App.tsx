@@ -12,6 +12,8 @@ import { LogisticaDespachoView } from './components/LogisticaDespachoView';
 import { GestionUsuariosView } from './components/GestionUsuariosView';
 import { FichasNormativasView } from './components/FichasNormativasView';
 import { MermasView } from './components/MermasView';
+import { ConfiguracionView } from './components/ConfiguracionView';
+import { ReportesView } from './components/ReportesView';
 import { LoginForm } from './components/LoginForm';
 import { calcularCotizacion } from './api/cotizaciones';
 import type { CotizacionPayload, TokenResponse, Role } from './types';
@@ -98,8 +100,8 @@ export const AppContent: React.FC = () => {
       case 'usuarios': return <GestionUsuariosView />;
       case 'fichas': return <FichasNormativasView />;
       case 'mermas': return <MermasView />;
-      case 'reportes': return <div className="text-center py-12 text-gray-400">Reportes - En desarrollo</div>;
-      case 'configuracion': return <div className="text-center py-12 text-gray-400">Configuración - En desarrollo</div>;
+      case 'reportes': return <ReportesView />;
+      case 'configuracion': return <ConfiguracionView />;
       default: return null;
     }
   };

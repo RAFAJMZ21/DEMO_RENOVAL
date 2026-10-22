@@ -142,6 +142,16 @@ export interface InsumoClavado {
   linea_asignada: string;
 }
 
+export interface InsumoCreate {
+  codigo: string;
+  descripcion: string;
+  tipo: 'CLAVO_ESPIRAL' | 'GRAPA' | 'ESQUINERO' | 'PINTURA';
+  medida: string;
+  existencia_kg: number;
+  stock_minimo_kg: number;
+  linea_asignada: string;
+}
+
 export interface ControlMerma {
   id: number;
   folio_lote: string;
@@ -182,6 +192,14 @@ export interface ClienteSchema {
   credito_utilizado: number;
   anticipos_registrados: number;
   created_at: string;
+}
+
+export interface ClienteCreate {
+  razon_social: string;
+  rfc: string;
+  limite_credito: number;
+  credito_utilizado: number;
+  anticipos_registrados: number;
 }
 
 export interface FichaNormativa {

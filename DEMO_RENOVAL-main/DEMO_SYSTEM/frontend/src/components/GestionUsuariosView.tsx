@@ -85,9 +85,8 @@ export const GestionUsuariosView: React.FC = () => {
     e.preventDefault();
     try {
       if (editingUser) {
-        const updateData = { ...formData };
-        if (!updateData.password) delete updateData.password;
-        await updateUsuario(editingUser.id, updateData);
+        const { password, ...updateData } = formData;
+        await updateUsuario(editingUser.id, password ? { ...updateData, password } : updateData);
         setToast({ message: 'Usuario actualizado correctamente', type: 'success' });
       } else {
         await createUsuario(formData);
@@ -211,7 +210,7 @@ export const GestionUsuariosView: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-gray-400">{editingUser ? 'Nueva Contraseña' : 'Contraseña *'} </label>
-              <input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" {editingUser ? '' : 'required'} placeholder={editingUser ? 'Dejar vacío para no cambiar' : 'Mínimo 6 caracteres'} />
+              <input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full mt-1 p-2.5 bg-[#181d29] border border-[#252c3d] rounded-xl text-sm font-semibold outline-none focus:border-emerald-500" required={!editingUser} placeholder={editingUser ? 'Dejar vacío para no cambiar' : 'Mínimo 6 caracteres'} />
             </div>
             <div>
               <label className="block text-xs text-gray-400">Nombre Completo *</label>
