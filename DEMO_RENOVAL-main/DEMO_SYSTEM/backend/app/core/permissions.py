@@ -17,6 +17,8 @@ class Module(str, Enum):
     LOGISTICA = "logistica"
     CERTIFICADOS = "certificados"
     USUARIOS = "usuarios"
+    FICHAS = "fichas"
+    MERMAS = "mermas"
     REPORTES = "reportes"
     CONFIGURACION = "configuracion"
 
@@ -70,6 +72,8 @@ MODULE_METADATA = {
     Module.LOGISTICA: {"label": "Logística y Despacho", "icon": "Truck", "path": "/logistica"},
     Module.CERTIFICADOS: {"label": "Certificados HT", "icon": "Award", "path": "/certificados"},
     Module.USUARIOS: {"label": "Gestión de Usuarios", "icon": "UserCog", "path": "/usuarios"},
+    Module.FICHAS: {"label": "Fichas Normativas", "icon": "FolderOpen", "path": "/fichas"},
+    Module.MERMAS: {"label": "Control de Mermas", "icon": "AlertTriangle", "path": "/mermas"},
     Module.REPORTES: {"label": "Reportes", "icon": "FileText", "path": "/reportes"},
     Module.CONFIGURACION: {"label": "Configuración", "icon": "Settings", "path": "/configuracion"},
 }
