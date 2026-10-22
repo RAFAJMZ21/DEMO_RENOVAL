@@ -47,6 +47,7 @@ export interface CotizacionPayload {
 export interface LoteProduccionGantt {
   id: number;
   folio_lote: string;
+  orden_produccion?: string;
   producto: string;
   piezas_totales: number;
   piezas_completadas: number;
@@ -80,6 +81,28 @@ export interface InventarioAlmacen {
     existencia: string;
     proveedor: string;
   }[];
+}
+
+export type EstadoInventarioTarima = 'DISPONIBLE' | 'RESERVADO' | 'EN_TRANSITO';
+
+export interface InventarioTarima {
+  id: number;
+  codigo: string;
+  modelo: string;
+  medidas: string;
+  madera: string;
+  piezas_disponibles: number;
+  pies_tablares: number;
+  ubicacion: string;
+  cliente_reservado: string;
+  estado: EstadoInventarioTarima;
+}
+
+export interface InventarioTarimasResponse {
+  area: string;
+  total_piezas: number;
+  total_pies_tablares: number;
+  tarimas: InventarioTarima[];
 }
 
 export interface DashboardMetrics {
@@ -123,6 +146,7 @@ export interface EmbarqueDespacho {
   cliente: string;
   chofer: string;
   placas_trailer: string;
+  destino: string;
   tarimas_cargadas: number;
   fecha_despacho: string;
   estatus: 'PROGRAMADO' | 'EN_TRANSITO' | 'ENTREGADO';
@@ -137,4 +161,62 @@ export interface CertificadoFitosanitario {
   temperatura_alcanzada: number;
   tiempo_sostenimiento_min: number;
   fecha_emision: string;
+}
+
+export interface DestinoFlete {
+  id: number;
+  estado: string;
+  municipio: string;
+  km: number;
+  costo_gasolina: number;
+  costo_casetas: number;
+  precio_flete_total: number;
+  capacidad_tarimas: number;
+  costo_tarima_unitario: number;
+}
+
+export interface FleteTarifa {
+  id: number;
+  estado: string;
+  municipio: string;
+  empresa: string;
+  kilometros: number;
+  precio_flete: number;
+  costo_km: number;
+  capacidad_tarimas: number;
+  precio_unitario: number;
+  precio_reducido: number;
+}
+
+export type EstadoViaje = 'Pendiente' | 'En Tránsito' | 'Completado' | 'Rechazado';
+
+export interface ViajeLogisticaCreate {
+  folio_cotizacion_id?: number | null;
+  tarifa_id: number;
+  operador_id?: number | null;
+  unidad: string;
+  cantidad_tarimas: number;
+  fecha_salida?: string;
+}
+
+export interface ViajeLogisticaDetalle {
+  id: number;
+  folio_cotizacion: string;
+  tarifa_id: number;
+  operador_nombre: string;
+  unidad: string;
+  cantidad_tarimas: number;
+  costo_total_flete: number;
+  estado: EstadoViaje;
+  fecha_salida: string;
+  destino: string;
+  estado_tarifa: string;
+  municipio: string;
+  empresa: string;
+  kilometros: number;
+  costo_km: number;
+  precio_flete: number;
+  capacidad_tarimas: number;
+  precio_unitario: number;
+  precio_reducido: number;
 }

@@ -1,21 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { loginUser, registerUser } from '../api/auth';
+import { probeApiConnection } from '../api/axios';
+import { useConnectionStatus } from '../api/connection';
 import type { TokenResponse, UserRegisterPayload } from '../types';
-import { Lock, Mail, User, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, User, ShieldCheck, Eye, EyeOff, WifiOff } from 'lucide-react';
 
-export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void }> = ({ onLoginSuccess }) => {
+interface LoginFormProps {
+  onLoginSuccess: (data: TokenResponse) => void;
+  onDemoLogin?: () => void;
+}
+
+export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onDemoLogin }) => {
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   // Estados del Formulario
   const [email, setEmail] = useState<string>('admin@renoval.com');
-  const [password, setPassword] = useState<string>('123456');
+  const [password, setPassword] = useState<string>('admin123');
   const [username, setUsername] = useState<string>('');
   const [nombreCompleto, setNombreCompleto] = useState<string>('');
   const [rol, setRol] = useState<UserRegisterPayload['rol']>('ADMIN');
 
   const [error, setError] = useState<string>('');
   const [mensajeExito, setMensajeExito] = useState<string>('');
+
+  const conexion = useConnectionStatus();
+
+  useEffect(() => {
+    void probeApiConnection();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -42,7 +55,7 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
         localStorage.setItem('access_token', res.access_token);
         onLoginSuccess(res);
       } catch {
-        setError('Credenciales incorrectas o el servidor backend está apagado.');
+        setError('Credenciales incorrectas. Verifica tu correo y contraseña.');
       }
     }
   };
@@ -59,6 +72,12 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
 
         {error && <div className="p-2 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded text-center">{error}</div>}
         {mensajeExito && <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded text-center">{mensajeExito}</div>}
+        {conexion === 'offline' && (
+          <div className="p-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs rounded text-center flex items-center justify-center gap-1.5">
+            <WifiOff className="w-3.5 h-3.5 shrink-0" />
+            <span>Backend no disponible: entrarás al Modo Demo con datos en memoria.</span>
+          </div>
+        )}
 
         {isRegistering && (
           <>
@@ -130,6 +149,17 @@ export const LoginForm: React.FC<{ onLoginSuccess: (data: TokenResponse) => void
         <button type="submit" className="w-full bg-lime-400 hover:bg-lime-300 text-emerald-950 font-bold py-3 rounded-xl transition mt-4">
           {isRegistering ? 'Registrar Usuario' : 'Iniciar Sesión'}
         </button>
+
+        {onDemoLogin && !isRegistering && (
+          <button
+            type="button"
+            onClick={onDemoLogin}
+            className="w-full flex items-center justify-center gap-2 border border-emerald-800/60 bg-emerald-950/40 hover:bg-emerald-950/70 text-emerald-300 font-bold py-3 rounded-xl text-xs transition"
+          >
+            <WifiOff className="w-4 h-4" />
+            <span>Entrar en Modo Demo (Administrador)</span>
+          </button>
+        )}
 
         <div className="text-center pt-2">
           <button type="button" onClick={() => setIsRegistering(!isRegistering)} className="text-xs text-emerald-400 hover:underline">

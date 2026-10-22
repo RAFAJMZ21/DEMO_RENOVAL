@@ -10,103 +10,94 @@ import { FichasNormativasView } from './components/FichasNormativasView';
 import { InventarioMaderaView } from './components/InventarioMaderaView';
 import { InsumosClavadoView } from './components/InsumosClavadoView';
 import { LogisticaDespachoView } from './components/LogisticaDespachoView';
+import { LogisticaEmbarquesView } from './components/LogisticaEmbarquesView';
 import { GestionUsuariosView } from './components/GestionUsuariosView';
 import { LoginForm } from './components/LoginForm';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { AuthProvider } from './context/AuthProvider';
+import { useAuth } from './context/auth';
 import { calcularCotizacion } from './api/cotizaciones';
-import type { CotizacionPayload, TokenResponse } from './types';
+import type { CotizacionPayload } from './types';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export const AppContent: React.FC = () => {
-  const [user, setUser] = useState<TokenResponse | null>(() => {
-    const token = localStorage.getItem('access_token');
-    return token ? {
-      access_token: token,
-      token_type: 'bearer',
-      user_info: {
-        email: 'admin@renoval.com',
-        nombre: 'Ing. Rafael',
-        rol: 'ADMIN',
-        area: 'Planta'
-      }
-    } : null;
-  });
-
+  const { user, login, loginDemo, logout } = useAuth();
   const [activeView, setActiveView] = useState<string>('dashboard');
 
   if (!user) {
-    return <LoginForm onLoginSuccess={(userData) => setUser(userData)} />;
+    return <LoginForm onLoginSuccess={login} onDemoLogin={loginDemo} />;
   }
-
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    setUser(null);
-  };
 
   const handleSaveCotizacion = async (payload: CotizacionPayload) => {
     try {
       const res = await calcularCotizacion(payload);
-      alert(`Cotización guardada en MySQL. Folio: ${res.folio} - Utilidad: $${res.utilidad_unitaria} MXN`);
+      alert(`Cotización guardada. Folio: ${res.folio} - Utilidad: $${res.utilidad_unitaria} MXN`);
       setActiveView('dashboard');
     } catch {
       alert('Error al procesar y guardar la cotización.');
     }
   };
 
+  const renderView = (): React.ReactNode => {
+    switch (activeView) {
+      case 'cotizador':
+        return <CotizadorForm onSubmit={handleSaveCotizacion} />;
+      case 'inventario_madera':
+        return <InventarioMaderaView />;
+      case 'insumos_clavado':
+        return <InsumosClavadoView />;
+      case 'lotes':
+        return <GanttProduccion />;
+      case 'fitosanitario':
+        return <FitosanitarioView />;
+      case 'certificados':
+        return <CertificadosView />;
+      case 'logistica':
+      case 'logistica_aprobaciones':
+        return <LogisticaDespachoView />;
+      case 'logistica_embarques':
+        return <LogisticaEmbarquesView />;
+      case 'clientes':
+        return <ClientesView />;
+      case 'usuarios':
+        return <GestionUsuariosView />;
+      case 'fichas':
+        return <FichasNormativasView />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <DashboardLayout 
-      activeView={activeView} 
-      onNavigate={(view) => setActiveView(view)} 
-      onLogout={handleLogout}
-      userName={user.user_info.nombre}
+    <DashboardLayout
+      activeView={activeView}
+      onNavigate={(view) => setActiveView(view)}
+      onLogout={logout}
+      userName={user.nombre}
     >
-      {activeView === 'cotizador' && (
-        <CotizadorForm onSubmit={handleSaveCotizacion} />
-      )}
-
-      {activeView === 'inventario_madera' && (
-        <InventarioMaderaView />
-      )}
-
-      {activeView === 'insumos_clavado' && (
-        <InsumosClavadoView />
-      )}
-
-      {activeView === 'lotes' && (
-        <GanttProduccion />
-      )}
-
-      {activeView === 'fitosanitario' && (
-        <FitosanitarioView />
-      )}
-
-      {activeView === 'certificados' && (
-        <CertificadosView />
-      )}
-
-      {activeView === 'logistica' && (
-        <LogisticaDespachoView />
-      )}
-
-      {activeView === 'clientes' && (
-        <ClientesView />
-      )}
-
-      {activeView === 'usuarios' && (
-        <GestionUsuariosView />
-      )}
-
-      {activeView === 'fichas' && (
-        <FichasNormativasView />
-      )}
+      <ErrorBoundary key={`/${activeView}`} label={activeView}>
+        {renderView()}
+      </ErrorBoundary>
     </DashboardLayout>
   );
 };
 
 export const App: React.FC = () => (
-  <QueryClientProvider client={queryClient}>
-    <AppContent />
-  </QueryClientProvider>
+  <ErrorBoundary label="Aplicación">
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

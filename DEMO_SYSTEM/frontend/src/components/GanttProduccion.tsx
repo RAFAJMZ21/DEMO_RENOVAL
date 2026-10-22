@@ -1,15 +1,20 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getProduccionGantt } from '../api/modulos';
-import { Calendar, CheckCircle2, Flame, Hammer, Loader2 } from 'lucide-react';
+import { MOCK_LOTES_GANTT } from '../api/demoMocks';
+import { Calendar, CheckCircle2, Flame, Hammer } from 'lucide-react';
 
 export const GanttProduccion: React.FC = () => {
-  const { data: lotes, isLoading, isFetching } = useQuery({
+  // initialData: arranca con datos del Modo Demo y nunca queda en undefined/vacío.
+  const { data: lotes, isFetching } = useQuery({
     queryKey: ['produccion-gantt'],
     queryFn: getProduccionGantt,
+    initialData: MOCK_LOTES_GANTT,
     refetchInterval: 30000, // Actualiza cada 30 segundos en segundo plano
     staleTime: 10000,       // Considera los datos frescos por 10 segundos
   });
+
+  const lotesLista = lotes ?? MOCK_LOTES_GANTT;
 
   const diasTimeline = [
     { label: 'Lun 14', fechaStr: '2026-09-14' },
@@ -22,16 +27,6 @@ export const GanttProduccion: React.FC = () => {
     { label: 'Lun 21', fechaStr: '2026-09-21' },
     { label: 'Mar 22', fechaStr: '2026-09-22' },
   ];
-
-  // SOLO muestra pantalla completa de carga si NO hay datos previos cargados
-  if (isLoading && !lotes) {
-    return (
-      <div className="flex justify-center items-center py-20 text-emerald-400">
-        <Loader2 className="w-8 h-8 animate-spin mr-2" />
-        <span>Cargando programación de lotes en tiempo real...</span>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 text-white">
@@ -96,7 +91,7 @@ export const GanttProduccion: React.FC = () => {
 
           {/* Filas de Lotes */}
           <div className="divide-y divide-gray-800/60 mt-3">
-            {lotes?.map((lote) => (
+            {lotesLista.map((lote) => (
               <div key={lote.id} className="grid grid-cols-12 gap-2 py-4 items-center hover:bg-gray-800/30 rounded-xl px-2 transition">
                 
                 {/* Info Lote */}
@@ -108,8 +103,14 @@ export const GanttProduccion: React.FC = () => {
                     </span>
                   </div>
                   <div className="font-bold text-sm text-white truncate">{lote.producto}</div>
-                  <div className="text-[11px] text-gray-400 flex items-center gap-2">
+                  <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2">
+                    {lote.orden_produccion && (
+                      <span>OP: <strong className="text-emerald-300 font-mono">{lote.orden_produccion}</strong></span>
+                    )}
                     <span>Área: <strong className="text-gray-200">{lote.area_asignada}</strong></span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 font-mono">
+                    {lote.fecha_inicio} → {lote.fecha_fin_estimada}
                   </div>
                 </div>
 
@@ -145,6 +146,11 @@ export const GanttProduccion: React.FC = () => {
 
               </div>
             ))}
+            {lotesLista.length === 0 && (
+              <div className="p-8 text-center text-gray-500 text-sm">
+                No hay lotes de producción programados.
+              </div>
+            )}
           </div>
 
         </div>
